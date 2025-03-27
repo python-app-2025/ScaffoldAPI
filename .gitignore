@@ -1,0 +1,16 @@
+# C# (Backend)
+bin/
+obj/
+.vs/
+*.user
+*.suo
+*.cache
+*.pdb
+*.dll
+*.exe
+
+# JavaScript (Frontend)
+node_modules/
+dist/
+*.log
+.env
