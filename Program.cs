@@ -12,7 +12,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 builder.WebHost.ConfigureKestrel(serverOptions =>
 {
-    serverOptions.ListenAnyIP(int.Parse(Environment.GetEnvironmentVariable("PORT") ?? "8080")); // Render проксирует 443 -> 8080
+    serverOptions.ListenAnyIP(8080); // Render проксирует 443 -> 8080
 });
 
 
@@ -25,8 +25,10 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
     {
-        policy.AllowAnyOrigin()
+        policy.WithOrigins("https://scaffoldapi.onrender.com, 
+                            "http://localhost:8080")
               .AllowAnyMethod()
+              .AllowAnyHeader()
               .SetIsOriginAllowed(origin => true)
               .AllowCredentials();
     });
