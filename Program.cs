@@ -12,7 +12,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 builder.WebHost.ConfigureKestrel(serverOptions =>
 {
-    serverOptions.ListenAnyIP(8080); // Render проксирует 443 -> 8080
+    serverOptions.ListenAnyIP(int.Parse(Environment.GetEnvironmentVariable("PORT") ?? "8080")); // Render проксирует 443 -> 8080
 });
 
 
@@ -27,7 +27,6 @@ builder.Services.AddCors(options =>
     {
         policy.AllowAnyOrigin()
               .AllowAnyMethod()
-              .AllowAnyHeader()
               .SetIsOriginAllowed(origin => true)
               .AllowCredentials();
     });
