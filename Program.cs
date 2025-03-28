@@ -70,6 +70,5 @@ app.UseAuthorization();
 app.UseStaticFiles();
 app.MapFallbackToFile("index.html"); 
 app.MapControllers();
-app.MapGet("/", () => "Hello World!");
 
 app.Run();
