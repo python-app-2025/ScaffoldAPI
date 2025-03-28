@@ -13,7 +13,11 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 builder.WebHost.ConfigureKestrel(options => {
         options.ListenLocalhost(5001, opts => {
         opts.UseHttps();
+        
     });
+    
+    options.ListenAnyIP(80);
+    
 });
 
 builder.Services.AddControllers();
@@ -70,5 +74,6 @@ app.UseAuthorization();
 app.UseStaticFiles();
 app.MapFallbackToFile("index.html"); 
 app.MapControllers();
+app.UseHttpsRedirection(); 
 
 app.Run();
