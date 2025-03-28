@@ -1,5 +1,5 @@
 // Конфигурация API
-const API_BASE_URL = 'https://scaffoldapi.onrender.com'
+const API_BASE_URL = 'https://scaffoldapi.onrender.com/api'
 let currentDictionaryType = null;
 
 // Инициализация при загрузке страницы
