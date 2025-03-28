@@ -140,12 +140,23 @@ async function submitForm() {
 // Загрузка справочников
 async function loadDictionaries() {
     const dictionaries = [
-        { type: 'LMO', elementId: 'lmoSelect' },
         { type: 'Project', elementId: 'projectSelect' },
         { type: 'SppElement', elementId: 'sppElementSelect' },
         { type: 'Organization', elementId: 'operatingOrganization' }
     ];
 
+    // Фиксированные значения для ЛМО
+    const lmoSelect = document.getElementById('lmoSelect');
+    if (lmoSelect) {
+        lmoSelect.innerHTML = `
+            <option value="">Выберите организацию</option>
+            <option value="Лесавик">Лесавик</option>
+            <option value="Инструктура">Инструктура</option>
+            <option value="СМТ НЛМК">СМТ НЛМК</option>
+            <option value="Подрядчик">Подрядчик</option>
+        `;
+    }
+    
     try {
         await Promise.all(dictionaries.map(async ({ type, elementId }) => {
             const response = await fetch(`${API_BASE_URL}/dictionary/${type}`);
@@ -153,6 +164,7 @@ async function loadDictionaries() {
             
             const data = await response.json();
             const select = document.getElementById(elementId);
+            
             
             // Сохраняем текущее выбранное значение
             const currentValue = select.value;
