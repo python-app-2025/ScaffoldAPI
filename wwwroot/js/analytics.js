@@ -1,4 +1,4 @@
-const API_BASE_URL = 'https://localhost:5001/api';
+const API_BASE_URL = 'https://scaffoldapi.onrender.com/';
 let volumeChart = null;
 let statusChart = null;
 
