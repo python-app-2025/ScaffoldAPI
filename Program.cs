@@ -25,8 +25,8 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
     {
-        policy.WithOrigins("https://scaffoldapi.onrender.com, 
-                            "http://localhost:8080")
+        policy.WithOrigins("https://your-frontend-domain.com", 
+                         "http://localhost:3000")
               .AllowAnyMethod()
               .AllowAnyHeader()
               .SetIsOriginAllowed(origin => true)
