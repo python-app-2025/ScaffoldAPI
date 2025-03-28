@@ -351,16 +351,15 @@
                 <!-- Секция ЛМО -->
                 <div class="form-section">
                     <label>ЛМО:</label>
-                    <div class="input-group">
-                        <select id="lmoSelect">
-                            <option value="">Выберите организацию</option>
-                        </select>
-                        <button type="button" class="btn-add" data-type="lmo" onclick="openAddModal('lmo')" title="Добавить">
-                            <i class="fas fa-plus"></i>
-                        </button>
-                    </div>
+                    <select id="lmoSelect" required>
+                        <option value="">Выберите организацию</option>
+                        <option value="Лесавик">Лесавик</option>
+                        <option value="Инструктура">Инструктура</option>
+                        <option value="СМТ НЛМК">СМТ НЛМК</option>
+                        <option value="Подрядчик">Подрядчик</option>
+                    </select>
                 </div>
-
+                
                 <!-- Расположение на рабочей площадке -->
                 <div class="form-group">
                     <label>Расположение на рабочей площадке:</label>
