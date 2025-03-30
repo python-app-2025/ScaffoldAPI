@@ -1,13 +1,13 @@
-const API_BASE_URL = 'https://localhost:5001/api';
+// analytics.js
+const API_BASE_URL = 'https://scaffoldapi.onrender.com/api';
 let volumeChart = null;
 let statusChart = null;
+let timelineChart = null; 
 
 document.addEventListener('DOMContentLoaded', async () => {
     try {
         await initFilters();
         await updateCharts();
-        
-        // Назначение обработчика кнопки
         document.getElementById('applyFilters').addEventListener('click', updateCharts);
     } catch (error) {
         showError(`Ошибка инициализации: ${error.message}`);
@@ -16,19 +16,21 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 async function initFilters() {
     try {
-        const response = await fetch(`${API_BASE_URL}/dictionary/Project`);
+        // Загружаем проекты из реестра лесов, а не из справочника
+        const response = await fetch(`${API_BASE_URL}/scaffoldcards/projects`);
         if (!response.ok) throw new Error('Ошибка загрузки проектов');
         
         const projects = await response.json();
         const select = document.getElementById('projectFilter');
         
-        // Очищаем и добавляем новые options
         select.innerHTML = '<option value="">Все проекты</option>';
         projects.forEach(project => {
-            const option = document.createElement('option');
-            option.value = project.id || project.value;
-            option.textContent = project.name || project.value;
-            select.appendChild(option);
+            if (project) { // Проверяем, что проект не пустой
+                const option = document.createElement('option');
+                option.value = project;
+                option.textContent = project;
+                select.appendChild(option);
+            }
         });
     } catch (error) {
         showError(`Ошибка загрузки фильтров: ${error.message}`);
@@ -41,23 +43,16 @@ async function updateCharts() {
     const errorElement = document.getElementById('error-message');
     
     try {
-        // Показываем загрузку и скрываем ошибки
         loader.style.display = 'block';
         errorElement.style.display = 'none';
         
-        // Получаем параметры фильтров
-        const projectId = document.getElementById('projectFilter').value;
+        const project = document.getElementById('projectFilter').value;
         const status = document.getElementById('statusFilter').value;
         
-        // Формируем URL с параметрами
-        const url = new URL(`${API_BASE_URL}/analytics/data`);
-        if (projectId) url.searchParams.append('projectId', projectId);
-        if (status) url.searchParams.append('status', status);
-        
-        // Загружаем данные
-        const response = await fetch(url, {
-            credentials: 'include'
-        });
+        const response = await fetch(`${API_BASE_URL}/scaffoldcards/analytics?` + new URLSearchParams({
+            project,
+            status
+        }));
         
         if (!response.ok) {
             throw new Error(`Ошибка сервера: ${response.status}`);
@@ -76,26 +71,74 @@ async function updateCharts() {
 
 function renderCharts(data) {
     try {
-        // Получаем canvas элементы
         const volumeCanvas = document.getElementById('volumeChart');
         const statusCanvas = document.getElementById('statusChart');
+        const timelineCanvas = document.getElementById('timelineChart');
         
-        if (!volumeCanvas || !statusCanvas) {
+        if (!volumeCanvas || !statusCanvas || !timelineCanvas) {
             throw new Error('Элементы графиков не найдены');
         }
         
-        // Уничтожаем старые графики
         if (volumeChart) volumeChart.destroy();
         if (statusChart) statusChart.destroy();
+        if (timelineChart) timelineChart.destroy();
         
-        // График объемов
+        // Новый график динамики по времени
+        timelineChart = new Chart(timelineCanvas, {
+            type: 'line',
+            data: {
+                labels: data.timelineLabels || ['Нет данных'],
+                datasets: [{
+                    label: 'Объем лесов (м³)',
+                    data: data.timelineVolumes || [0],
+                    backgroundColor: 'rgba(155, 89, 182, 0.2)',
+                    borderColor: 'rgba(155, 89, 182, 1)',
+                    borderWidth: 2,
+                    tension: 0.1,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Динамика объема лесов по времени'
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return `Объем: ${context.raw} м³`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Объем (м³)'
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Период'
+                        }
+                    }
+                }
+            }
+        });
+        
+        // График объемов лесов по проектам
         volumeChart = new Chart(volumeCanvas, {
             type: 'bar',
             data: {
-                labels: data.volume?.labels || ['Нет данных'],
+                labels: data.projects || ['Нет данных'],
                 datasets: [{
                     label: 'Объем лесов (м³)',
-                    data: data.volume?.values || [0],
+                    data: data.volumes || [0],
                     backgroundColor: 'rgba(52, 152, 219, 0.7)',
                     borderColor: 'rgba(52, 152, 219, 1)',
                     borderWidth: 1
@@ -103,16 +146,32 @@ function renderCharts(data) {
             },
             options: {
                 responsive: true,
-                maintainAspectRatio: false,
                 plugins: {
                     title: {
                         display: true,
                         text: 'Объем лесов по проектам'
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return `Объем: ${context.raw} м³`;
+                            }
+                        }
                     }
                 },
                 scales: {
                     y: {
-                        beginAtZero: true
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Объем (м³)'
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Проекты'
+                        }
                     }
                 }
             }
@@ -122,23 +181,33 @@ function renderCharts(data) {
         statusChart = new Chart(statusCanvas, {
             type: 'pie',
             data: {
-                labels: data.status?.labels || ['Нет данных'],
+                labels: data.statusLabels || ['Нет данных'],
                 datasets: [{
-                    data: data.status?.values || [1],
+                    data: data.statusCounts || [1],
                     backgroundColor: [
                         'rgba(46, 204, 113, 0.7)',
-                        'rgba(231, 76, 60, 0.7)'
+                        'rgba(231, 76, 60, 0.7)',
+                        'rgba(241, 196, 15, 0.7)'
                     ],
                     borderWidth: 1
                 }]
             },
             options: {
                 responsive: true,
-                maintainAspectRatio: false,
                 plugins: {
                     title: {
                         display: true,
                         text: 'Распределение по статусам'
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const total = context.dataset.data.reduce((acc, data) => acc + data, 0);
+                                const value = context.raw;
+                                const percentage = Math.round((value / total) * 100);
+                                return `${context.label}: ${value} (${percentage}%)`;
+                            }
+                        }
                     }
                 }
             }
@@ -157,8 +226,6 @@ function showError(message) {
         errorElement.style.display = 'block';
     }
     console.error('Analytics Error:', message);
-    
-    // Автоматическое скрытие через 5 секунд
     setTimeout(() => {
         if (errorElement) errorElement.style.display = 'none';
     }, 5000);

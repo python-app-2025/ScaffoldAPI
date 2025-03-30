@@ -136,7 +136,7 @@
         /* Графики */
         .charts-container {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
             gap: 30px;
             margin-top: 30px;
         }
@@ -146,6 +146,7 @@
             border-radius: 8px;
             padding: 20px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            min-height: 400px;
         }
 
         .chart-box canvas {
@@ -244,6 +245,12 @@
                     <span>Аналитика</span>
                 </a>
             </li>
+            <li class="nav-item">
+                <a href="/directory.html" class="nav-link">
+                    <i class="fas fa-book"></i>
+                    <span>Справочник</span>
+                </a>
+            </li>
         </ul>
     </aside>
 
@@ -276,6 +283,9 @@
                 </div>
                 <div class="chart-box">
                     <canvas id="statusChart" height="400"></canvas>
+                </div>
+                <div class="chart-box">
+                    <canvas id="timelineChart" height="400"></canvas>
                 </div>
             </div>
         </div>

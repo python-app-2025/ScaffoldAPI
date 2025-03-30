@@ -10,15 +10,11 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-builder.WebHost.ConfigureKestrel(options => {
-        options.ListenLocalhost(5001, opts => {
-        opts.UseHttps();
-        
-    });
-    
-    options.ListenAnyIP(80);
-    
+builder.WebHost.ConfigureKestrel(serverOptions =>
+{
+    serverOptions.ListenAnyIP(8080); // Render проксирует 443 -> 8080
 });
+
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
@@ -29,7 +25,8 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
     {
-        policy.WithOrigins("https://localhost:5001")
+        policy.WithOrigins("https://scaffoldapi.onrender.com", 
+                         "http://localhost:3000")
               .AllowAnyMethod()
               .AllowAnyHeader()
               .SetIsOriginAllowed(origin => true)
@@ -74,6 +71,5 @@ app.UseAuthorization();
 app.UseStaticFiles();
 app.MapFallbackToFile("index.html"); 
 app.MapControllers();
-app.UseHttpsRedirection(); 
 
 app.Run();

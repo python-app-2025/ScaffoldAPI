@@ -48,7 +48,11 @@ namespace ScaffoldAPI.Models
         [Range(0.1, double.MaxValue, ErrorMessage = "Height must be positive")]
         public decimal height { get; set; }
         
-        public decimal volume => length * width * height;
+        public decimal volume { get; private set; }
+        public void CalculateVolume()
+        {
+        volume = length * width * height;
+        }
         
         [Required(ErrorMessage = "The workType field is required.")]
         public string workType { get; set; } = string.Empty;

@@ -54,6 +54,17 @@ namespace ScaffoldAPI.Controllers
             return NoContent();
         }
         
+        [HttpGet("projects")]
+        public async Task<IActionResult> GetProjects()
+        {
+            var projects = await _context.ScaffoldCards
+                .Select(c => c.project)
+                .Distinct()
+                .ToListAsync();
+            
+            return Ok(projects);
+        }
+
         [HttpGet("{id}")]
         public async Task<IActionResult> GetCard(int id)
         {

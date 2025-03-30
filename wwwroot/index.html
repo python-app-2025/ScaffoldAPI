@@ -340,59 +340,58 @@
                     <span>Аналитика</span>
                 </a>
             </li>
+            <li class="nav-item">
+                <a href="/directory.html" class="nav-link">
+                    <i class="fas fa-book"></i>
+                    <span>Справочник</span>
+                </a>
+            </li>
         </ul>
     </aside>
 
-    <!-- Основное содержимое -->
+    <!-- Основное содержимое (компактная версия) -->
     <main class="main-content">
         <div class="container">
             <h1>Новая карточка учета лесов</h1>
             <form id="scaffoldForm">
-                <!-- Секция ЛМО -->
-                <div class="form-section">
-                    <label>ЛМО:</label>
-                    <div class="input-group">
-                        <select id="lmoSelect">
+                <!-- Первая строка - 4 элемента -->
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>ЛМО:</label>
+                        <select id="lmoSelect" required>
                             <option value="">Выберите организацию</option>
+                            <option value="Лесавик">Лесавик</option>
+                            <option value="Инструктура">Инструктура</option>
+                            <option value="СМТ НЛМК">СМТ НЛМК</option>
+                            <option value="Подрядчик">Подрядчик</option>
                         </select>
-                        <button type="button" class="btn-add" data-type="lmo" onclick="openAddModal('lmo')" title="Добавить">
-                            <i class="fas fa-plus"></i>
-                        </button>
                     </div>
-                </div>
+                    
+                    <div class="form-group">
+                        <label>Расположение:</label>
+                        <input type="text" id="location" placeholder="Рабочая площадка">
+                    </div>
 
-                <!-- Расположение на рабочей площадке -->
-                <div class="form-group">
-                    <label>Расположение на рабочей площадке:</label>
-                    <input type="text" id="location">
-                </div>
-
-                <!-- Организация, эксплуатирующая леса -->
-                <div class="form-group">
-                    <label>Организация, эксплуатирующая леса:</label>
-                    <div class="input-group">
+                    <div class="form-group">
+                        <label>Эксплуатирующая организация:</label>
                         <select id="operatingOrganization">
                             <option value="">Выберите организацию</option>
                             <option value="ПАО НЛМК">ПАО НЛМК</option>
                             <option value="СМТ НЛМК">СМТ НЛМК</option>
                         </select>
-                        <button type="button" class="btn-add" data-type="Organization" onclick="openAddModal('Organization')" title="Добавить">
-                            <i class="fas fa-plus"></i>
-                        </button>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Принадлежность:</label>
+                        <select id="ownership">
+                            <option value="">Выберите принадлежность</option>
+                            <option value="ПАО НЛМК">ПАО НЛМК</option>
+                            <option value="ЛМО">ЛМО</option>
+                        </select>
                     </div>
                 </div>
 
-                <!-- Принадлежность лесов -->
-                <div class="form-group">
-                    <label>Принадлежность лесов:</label>
-                    <select id="ownership">
-                        <option value="">Выберите принадлежность</option>
-                        <option value="ПАО НЛМК">ПАО НЛМК</option>
-                        <option value="ЛМО">ЛМО</option>
-                    </select>
-                </div>
-                
-                <!-- Номер акта и заявки -->
+                <!-- Вторая строка - 4 элемента -->
                 <div class="form-row">
                     <div class="form-group">
                         <label>№ Акта:</label>
@@ -402,38 +401,24 @@
                         <label>№ Заявки:</label>
                         <input type="text" id="requestNumber">
                     </div>
-                </div>
-
-                <!-- Проект и СПП элемент -->
-                <div class="form-row">
                     <div class="form-group">
                         <label>Проект:</label>
-                        <div class="input-group">
-                            <select id="projectSelect">
-                                <option value="">Выберите проект</option>
-                            </select>
-                            <button type="button" class="btn-add" data-type="Project" onclick="openAddModal('Project')" title="Добавить">
-                                <i class="fas fa-plus"></i>
-                            </button>
-                        </div>
+                        <select id="projectSelect">
+                            <option value="">Выберите проект</option>
+                        </select>
                     </div>
                     <div class="form-group">
                         <label>СПП Элемент:</label>
-                        <div class="input-group">
-                            <select id="sppElementSelect">
-                                <option value="">Выберите СПП</option>
-                            </select>
-                            <button type="button" class="btn-add" data-type="SppElement" onclick="openAddModal('SppElement')" title="Добавить">
-                                <i class="fas fa-plus"></i>
-                            </button>
-                        </div>
+                        <select id="sppElementSelect">
+                            <option value="">Выберите СПП</option>
+                        </select>
                     </div>
                 </div>
 
-                <!-- Даты -->
+                <!-- Третья строка - 3 элемента (даты) -->
                 <div class="form-row">
                     <div class="form-group">
-                        <label>Дата подачи заявки:</label>
+                        <label>Дата заявки:</label>
                         <input type="text" class="datepicker" id="requestDate">
                     </div>
                     <div class="form-group">
@@ -446,7 +431,7 @@
                     </div>
                 </div>
 
-                <!-- Характеристики лесов -->
+                <!-- Четвертая строка - 4 элемента (характеристики) -->
                 <div class="form-row">
                     <div class="form-group">
                         <label>Тип лесов:</label>
@@ -470,7 +455,7 @@
                     </div>
                 </div>
 
-                <!-- Дополнительные параметры -->
+                <!-- Пятая строка - 3 элемента -->
                 <div class="form-row">
                     <div class="form-group">
                         <label>Вид работ:</label>
@@ -513,18 +498,6 @@
                     </button>
                 </div>
             </form>
-        </div>
-
-        <!-- Модальное окно добавления -->
-        <div id="addModal" class="modal">
-            <div class="modal-content">
-                <h3>Добавить новое значение</h3>
-                <input type="text" id="newItemInput" placeholder="Введите значение">
-                <div class="modal-actions">
-                    <button onclick="addNewItem()" class="btn-confirm">Добавить</button>
-                    <button onclick="closeModal()" class="btn-cancel">Отмена</button>
-                </div>
-            </div>
         </div>
 
         <div id="messages-container"></div>

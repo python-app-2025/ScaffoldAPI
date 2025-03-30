@@ -1,4 +1,4 @@
-const API_BASE_URL = 'https://localhost:5001/api';
+const API_BASE_URL = 'https://scaffoldapi.onrender.com/api';
 let currentPage = 1;
 const pageSize = 10;
 let sortField = 'id';
@@ -53,7 +53,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 async function loadRegistry() {
     try {
-        const response = await fetch(`https://localhost:5001/api/scaffoldcards`, {
+        const response = await fetch(`${API_BASE_URL}/api/scaffoldcards`, {
             credentials: 'include' // Важно для CORS с перенаправлениями
         });
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
@@ -280,6 +280,17 @@ function renderModalContent(data, editMode = false) {
     }
 }
 
+// Функция для получения списка уникальных проектов
+async function getUniqueProjects() {
+    try {
+        const response = await fetch(`${API_BASE_URL}/scaffoldcards/projects`);
+        if (!response.ok) throw new Error('Ошибка загрузки проектов');
+        return await response.json();
+    } catch (error) {
+        console.error('Ошибка загрузки проектов:', error);
+        return [];
+    }
+}
 
 function showSuccess(message) {
     console.log('Успех:', message);

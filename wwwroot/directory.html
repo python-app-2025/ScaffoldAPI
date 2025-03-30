@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Реестр строительных лесов</title>
+    <title>Справочник</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root {
@@ -101,121 +101,90 @@
             border-bottom: 1px solid #eee;
         }
 
-        /* Элементы управления */
-        .controls {
-            display: flex;
-            gap: 15px;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
+        /* Стили для справочника */
+        .directory-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
 
-        #searchInput {
-            padding: 10px 12px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 0.9rem;
-            min-width: 250px;
-            flex: 1;
-        }
-
-        .btn-refresh {
-            padding: 10px 20px;
-            background-color: var(--secondary-color);
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: background 0.3s;
+        .directory-header {
             display: flex;
+            justify-content: space-between;
             align-items: center;
-            gap: 8px;
+            margin-bottom: 15px;
         }
 
-        .btn-refresh:hover {
-            background-color: #2980b9;
+        .directory-title {
+            font-size: 1.3rem;
+            color: var(--primary-color);
         }
 
-        /* Таблица */
-        #registryTable {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
+        .directory-list {
+            border: 1px solid #eee;
+            border-radius: 4px;
+            max-height: 300px;
+            overflow-y: auto;
+            margin-bottom: 15px;
         }
 
-        #registryTable th, #registryTable td {
-            padding: 12px 15px;
-            text-align: left;
+        .directory-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 15px;
             border-bottom: 1px solid #eee;
         }
 
-        #registryTable th {
-            background-color: var(--light-gray);
-            font-weight: 500;
-            color: var(--dark-gray);
+        .directory-item:last-child {
+            border-bottom: none;
         }
 
-        #registryTable tr:hover {
-            background-color: #f9f9f9;
-        }
-
-        /* Кнопки действий */
-        .details-btn, .delete-btn {
-            padding: 6px 12px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 0.8rem;
-            transition: all 0.3s;
-            display: inline-flex;
-            align-items: center;
+        .item-actions {
+            display: flex;
             gap: 5px;
         }
 
-        .details-btn {
-            background-color: var(--secondary-color);
-            color: white;
-            margin-right: 5px;
+        .add-item-form {
+            display: flex;
+            gap: 10px;
         }
 
-        .details-btn:hover {
+        .add-item-form input {
+            flex: 1;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .btn-add {
+            background-color: var(--secondary-color);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 8px 15px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .btn-add:hover {
             background-color: #2980b9;
         }
 
-        .delete-btn {
+        .btn-delete {
             background-color: var(--accent-color);
             color: white;
-        }
-
-        .delete-btn:hover {
-            background-color: #c0392b;
-        }
-
-        /* Пагинация */
-        .pagination {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 15px;
-            margin-top: 20px;
-        }
-
-        .pagination button {
-            padding: 8px 16px;
-            background-color: var(--light-gray);
-            color: var(--dark-gray);
             border: none;
             border-radius: 4px;
+            padding: 5px 10px;
             cursor: pointer;
-            transition: all 0.3s;
+            transition: background 0.3s;
         }
 
-        .pagination button:hover {
-            background-color: #e0e0e0;
-        }
-
-        .pagination button:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
+        .btn-delete:hover {
+            background-color: #c0392b;
         }
 
         /* Модальное окно */
@@ -237,31 +206,65 @@
             padding: 25px;
             border-radius: 8px;
             width: 90%;
-            max-width: 800px;
+            max-width: 500px;
             box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-            position: relative;
         }
 
-        .close {
-            position: absolute;
-            top: 15px;
-            right: 15px;
-            font-size: 1.5rem;
+        .modal-content h3 {
+            margin-bottom: 20px;
+            color: var(--primary-color);
+        }
+
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .btn-confirm, .btn-cancel {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
             cursor: pointer;
+            font-weight: 500;
+        }
+
+        .btn-confirm {
+            background-color: var(--secondary-color);
+            color: white;
+        }
+
+        .btn-cancel {
+            background-color: var(--light-gray);
             color: var(--dark-gray);
         }
 
-        .close:hover {
-            color: var(--accent-color);
+        /* Сообщения */
+        #messages-container {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+            width: 90%;
+            max-width: 500px;
         }
 
-        /* Сообщения об ошибках */
         .error-message {
+            background-color: rgba(231, 76, 60, 0.1);
             color: var(--accent-color);
             padding: 10px;
-            margin-bottom: 15px;
             border-radius: 4px;
-            background-color: rgba(231, 76, 60, 0.1);
+            margin-bottom: 15px;
+        }
+
+        .success-message {
+            background-color: rgba(46, 204, 113, 0.1);
+            color: #27ae60;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 15px;
         }
 
         /* Адаптивность */
@@ -290,17 +293,8 @@
                 padding: 15px;
             }
 
-            #registryTable {
-                display: block;
-                overflow-x: auto;
-            }
-
-            .controls {
+            .add-item-form {
                 flex-direction: column;
-            }
-
-            #searchInput {
-                min-width: 100%;
             }
         }
     </style>
@@ -319,7 +313,7 @@
                 </a>
             </li>
             <li class="nav-item">
-                <a href="/registry.html" class="nav-link active">
+                <a href="/registry.html" class="nav-link">
                     <i class="fas fa-list"></i>
                     <span>Реестр</span>
                 </a>
@@ -331,7 +325,7 @@
                 </a>
             </li>
             <li class="nav-item">
-                <a href="/directory.html" class="nav-link">
+                <a href="/directory.html" class="nav-link active">
                     <i class="fas fa-book"></i>
                     <span>Справочник</span>
                 </a>
@@ -342,58 +336,72 @@
     <!-- Основное содержимое -->
     <main class="main-content">
         <div class="container">
-            <h1>Реестр строительных лесов</h1>
-            <div id="error-message" class="error-message" style="display: none;"></div>
-
-            <div class="controls">
-                <input type="text" id="searchInput" placeholder="Поиск по реестру...">
-                <button onclick="loadData()" class="btn-refresh">
-                    <i class="fas fa-sync-alt"></i> Обновить
-                </button>
+            <h1>Справочник</h1>
+            
+            <!-- Секция организаций -->
+            <div class="directory-section">
+                <div class="directory-header">
+                    <h2 class="directory-title">Организации, эксплуатирующие леса</h2>
+                </div>
+                <div class="directory-list" id="organizations-list">
+                    <!-- Список будет заполнен через JS -->
+                </div>
+                <div class="add-item-form">
+                    <input type="text" id="new-organization" placeholder="Введите название организации">
+                    <button class="btn-add" onclick="addOrganization()">
+                        <i class="fas fa-plus"></i> Добавить
+                    </button>
+                </div>
             </div>
-
-            <table id="registryTable">
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>ЛМО</th>
-                        <th>№ Акта</th>
-                        <th>Проект</th>
-                        <th>Дата монтажа</th>
-                        <th>Статус</th>
-                        <th>Действия</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <!-- Данные будут загружены через JS -->
-                </tbody>
-            </table>
-
-            <div class="pagination">
-                <button id="prevPage" disabled><i class="fas fa-chevron-left"></i> Назад</button>
-                <span id="pageInfo">Страница 1 из 1</span>
-                <button id="nextPage" disabled>Вперед <i class="fas fa-chevron-right"></i></button>
+            
+            <!-- Секция проектов -->
+            <div class="directory-section">
+                <div class="directory-header">
+                    <h2 class="directory-title">Проекты</h2>
+                </div>
+                <div class="directory-list" id="projects-list">
+                    <!-- Список будет заполнен через JS -->
+                </div>
+                <div class="add-item-form">
+                    <input type="text" id="new-project" placeholder="Введите название проекта">
+                    <button class="btn-add" onclick="addProject()">
+                        <i class="fas fa-plus"></i> Добавить
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Секция СПП элементов -->
+            <div class="directory-section">
+                <div class="directory-header">
+                    <h2 class="directory-title">СПП Элементы</h2>
+                </div>
+                <div class="directory-list" id="spp-elements-list">
+                    <!-- Список будет заполнен через JS -->
+                </div>
+                <div class="add-item-form">
+                    <input type="text" id="new-spp-element" placeholder="Введите название элемента">
+                    <button class="btn-add" onclick="addSppElement()">
+                        <i class="fas fa-plus"></i> Добавить
+                    </button>
+                </div>
             </div>
         </div>
 
-        <!-- Модальное окно деталей -->
-        <div id="details-modal" class="modal">
+        <!-- Модальное окно подтверждения удаления -->
+        <div id="confirmModal" class="modal">
             <div class="modal-content">
-                <span class="close">&times;</span>
-                <h2 id="modal-title">Детали карточки</h2>
-                <div id="modal-content" class="modal-body">
-                    <!-- Форма будет заполняться динамически -->
-                </div>
+                <h3>Подтверждение удаления</h3>
+                <p>Вы уверены, что хотите удалить этот элемент?</p>
                 <div class="modal-actions">
-                    <button id="edit-btn" class="btn-edit">Редактировать</button>
-                    <button id="save-btn" class="btn-save" style="display: none;">Сохранить</button>
-                    <button id="cancel-btn" class="btn-cancel" style="display: none;">Отмена</button>
+                    <button onclick="confirmDelete()" class="btn-confirm">Удалить</button>
+                    <button onclick="closeModal()" class="btn-cancel">Отмена</button>
                 </div>
             </div>
         </div>
-      <div id="messages-container" style="position: fixed; top: 20px; right: 20px; z-index: 1000;"></div>
+
+        <div id="messages-container"></div>
     </main>
 
-    <script src="/js/registry.js"></script>
+    <script src="/js/directory.js"></script>
 </body>
 </html>

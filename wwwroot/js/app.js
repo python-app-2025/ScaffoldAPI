@@ -1,5 +1,5 @@
 // Конфигурация API
-const API_BASE_URL = 'https://localhost:5001/api'
+const API_BASE_URL = 'https://scaffoldapi.onrender.com/api'
 let currentDictionaryType = null;
 
 // Инициализация при загрузке страницы
@@ -90,6 +90,9 @@ async function submitForm() {
         length: Math.max(0.1, parseFloat(document.getElementById('length').value) || 0.1),
         width: Math.max(0.1, parseFloat(document.getElementById('width').value) || 0.1),
         height: Math.max(0.1, parseFloat(document.getElementById('height').value) || 0.1),
+        volume: Math.max(0.1, parseFloat(document.getElementById('length').value) || 0.1) * 
+                Math.max(0.1, parseFloat(document.getElementById('width').value) || 0.1) * 
+                Math.max(0.1, parseFloat(document.getElementById('height').value) || 0.1),
         workType: document.getElementById('workType').value.trim(),
         customer: document.getElementById('customer').value.trim(),
         operatingOrganization: document.getElementById('operatingOrganization').value.trim(),
@@ -140,12 +143,23 @@ async function submitForm() {
 // Загрузка справочников
 async function loadDictionaries() {
     const dictionaries = [
-        { type: 'LMO', elementId: 'lmoSelect' },
         { type: 'Project', elementId: 'projectSelect' },
         { type: 'SppElement', elementId: 'sppElementSelect' },
         { type: 'Organization', elementId: 'operatingOrganization' }
     ];
 
+    // Фиксированные значения для ЛМО
+    const lmoSelect = document.getElementById('lmoSelect');
+    if (lmoSelect) {
+        lmoSelect.innerHTML = `
+            <option value="">Выберите организацию</option>
+            <option value="Лесавик">Лесавик</option>
+            <option value="Инструктура">Инструктура</option>
+            <option value="СМТ НЛМК">СМТ НЛМК</option>
+            <option value="Подрядчик">Подрядчик</option>
+        `;
+    }
+    
     try {
         await Promise.all(dictionaries.map(async ({ type, elementId }) => {
             const response = await fetch(`${API_BASE_URL}/dictionary/${type}`);
@@ -172,53 +186,8 @@ async function loadDictionaries() {
     }
 }
 
-// Открытие модального окна
-function openAddModal(type) {
-    currentDictionaryType = type;
-    document.getElementById('newItemInput').value = '';
-    document.getElementById('addModal').style.display = 'block';
-}
 
-// Закрытие модального окна
-function closeModal() {
-    document.getElementById('addModal').style.display = 'none';
-}
-
-// Добавление нового элемента
-async function addNewItem() {
-    const input = document.getElementById('newItemInput');
-    const value = input.value.trim();
     
-    if (!value) {
-        showError('Введите значение');
-        return;
-    }
-
-    try {
-        const response = await fetch(`${API_BASE_URL}/dictionary`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                type: currentDictionaryType,
-                value: value
-            })
-        });
-
-        if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
-            throw new Error(errorData.message || 'Ошибка сервера');
-        }
-
-        // После успешного добавления обновляем список
-        await loadDictionaries();
-        closeModal();
-        showSuccess('Значение успешно добавлено');
-    } catch (error) {
-        console.error('Ошибка добавления:', error);
-        showError(`Ошибка добавления: ${error.message || 'Неизвестная ошибка'}`);
-    }
-}
-
 // Вспомогательные функции
 function showError(message) {
     const container = document.getElementById('messages-container');
