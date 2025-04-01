@@ -21,8 +21,6 @@ namespace ScaffoldAPI.Controllers
         [HttpPost]
         public async Task<IActionResult> CreateCard([FromBody] ScaffoldCard card)
         {
-            if (!ModelState.IsValid) return BadRequest(ModelState);
-
             card.CalculateVolume();
             
             await _context.ScaffoldCards.AddAsync(card);
@@ -64,9 +62,6 @@ namespace ScaffoldAPI.Controllers
         {
             if (id != card.Id)
                 return BadRequest();
-
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
 
             _context.Entry(card).State = EntityState.Modified;
             

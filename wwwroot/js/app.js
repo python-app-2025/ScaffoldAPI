@@ -185,97 +185,128 @@ function formatDateForDisplay(dateStr) {
 // Форматирование даты для сервера
 function formatDateForServer(dateStr) {
     if (!dateStr) return null;
-    const [day, month, year] = dateStr.split('.');
-    return `${year}-${month}-${day}`;
+    try {
+        const [day, month, year] = dateStr.split('.');
+        if (!day || !month || !year) return null;
+        // Формат: YYYY-MM-DD
+        return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+    } catch (e) {
+        console.error('Ошибка форматирования даты:', e);
+        return null;
+    }
 }
 
 
 // Отправка формы
 async function submitForm() {
-    const formatDateForServer = (dateStr) => {
-        if (!dateStr) return null;
-        const [day, month, year] = dateStr.split('.');
-        return `${year}-${month}-${day}`; // YYYY-MM-DD
+    const checkApiAvailability = async () => {
+        try {
+            const response = await fetch(API_BASE_URL, {
+                method: 'HEAD',
+                signal: AbortSignal.timeout(3000)
+            });
+            
+            if (!response.ok) {
+                throw new Error(`API вернул статус ${response.status}`);
+            }
+            return true;
+        } catch (error) {
+            console.error('Ошибка доступа к API:', error);
+            showError('Сервер временно недоступен. Попробуйте позже.');
+            return false;
+        }
     };
 
-    // Собираем данные с правильной структурой (плоский объект)
-    const formData = {
-        Id: currentCardId ? parseInt(currentCardId) : 0,
-        CurrentStage: currentStage,
-        Status: currentStage === 'Допуск' ? document.getElementById('acceptanceStatus').value : 
-               currentStage === 'Демонтаж' ? 'Демонтировано' : 'Монтаж',
-        
-        // Общие поля
-        lmo: document.getElementById('lmoSelect').value.trim(),
-        actNumber: document.getElementById('actNumber').value.trim(), // Оставляем как строку
-        requestNumber: document.getElementById('requestNumber').value.trim(), // Оставляем как строку
-        project: document.getElementById('projectSelect').value.trim(),
-        sppElement: document.getElementById('sppElementSelect').value.trim(),
-        location: document.getElementById('location').value.trim(),
-        requestDate: formatDateForServer(document.getElementById('requestDate').value),
-        mountingDate: formatDateForServer(document.getElementById('mountingDate').value),
-        scaffoldType: document.getElementById('scaffoldType').value.trim(),
-        length: Math.max(0.1, parseFloat(document.getElementById('length').value) || 0.1),
-        width: Math.max(0.1, parseFloat(document.getElementById('width').value) || 0.1),
-        height: Math.max(0.1, parseFloat(document.getElementById('height').value) || 0.1),
-        volume: Math.max(0.1, parseFloat(document.getElementById('length').value) || 0.1) * 
-                Math.max(0.1, parseFloat(document.getElementById('width').value) || 0.1) * 
-                Math.max(0.1, parseFloat(document.getElementById('height').value) || 0.1),
-        workType: document.getElementById('workType').value.trim(),
-        customer: document.getElementById('customer').value.trim(),
-        operatingOrganization: document.getElementById('operatingOrganization').value.trim(),
-        ownership: document.getElementById('ownership').value.trim(),
+    if (!await checkApiAvailability()) {
+        return;
+    }
+    
+    const formatDateForServer = (dateStr) => {
+        if (!dateStr) return null;
+        try {
+            const [day, month, year] = dateStr.split('.');
+            if (!day || !month || !year) return null;
+            return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+        } catch (e) {
+            console.error('Ошибка форматирования даты:', e);
+            return null;
+        }
+    };
 
-        // Поля этапа 2
-        acceptanceRequestDate: formatDateForServer(document.getElementById('acceptanceRequestDate').value),
-        acceptanceDate: formatDateForServer(document.getElementById('acceptanceDate').value),
-        
-        // Поля этапа 3
-        dismantlingRequestDate: formatDateForServer(document.getElementById('dismantlingRequestDate').value),
-        dismantlingRequestNumber: document.getElementById('dismantlingRequestNumber').value.trim(),
-        dismantlingDate: formatDateForServer(document.getElementById('dismantlingDate').value)
+    // Убираем проверки на положительные значения
+    const length = parseFloat(document.getElementById('length').value) || 0;
+    const width = parseFloat(document.getElementById('width').value) || 0;
+    const height = parseFloat(document.getElementById('height').value) || 0;
+
+    // Формируем данные для отправки
+    const requestData = {
+        card: {
+            Id: currentCardId ? parseInt(currentCardId) : 0,
+            CurrentStage: currentStage,
+            Status: currentStage === 'Допуск' ? document.getElementById('acceptanceStatus').value : 
+                   currentStage === 'Демонтаж' ? 'Демонтировано' : 'Монтаж',
+            
+            length: Math.max(0.1, parseFloat(document.getElementById('length').value) || 0.1),
+            width: Math.max(0.1, parseFloat(document.getElementById('width').value) || 0.1),
+            height: Math.max(0.1, parseFloat(document.getElementById('height').value) || 0.1),
+            volume: Math.max(0.1, parseFloat(document.getElementById('length').value) || 0.1) * 
+                    Math.max(0.1, parseFloat(document.getElementById('width').value) || 0.1) * 
+                    Math.max(0.1, parseFloat(document.getElementById('height').value) || 0.1),
+            
+            lmo: document.getElementById('lmoSelect').value?.trim() || '',
+            actNumber: document.getElementById('actNumber').value?.trim() || '',
+            requestNumber: document.getElementById('requestNumber').value?.trim() || '',
+            project: document.getElementById('projectSelect').value?.trim() || '',
+            sppElement: document.getElementById('sppElementSelect').value?.trim() || '',
+            location: document.getElementById('location').value?.trim() || '',
+            requestDate: formatDateForServer(document.getElementById('requestDate').value),
+            mountingDate: formatDateForServer(document.getElementById('mountingDate').value),
+            scaffoldType: document.getElementById('scaffoldType').value?.trim() || '',
+            workType: document.getElementById('workType').value?.trim() || '',
+            customer: document.getElementById('customer').value?.trim() || '',
+            operatingOrganization: document.getElementById('operatingOrganization').value?.trim() || '',
+            ownership: document.getElementById('ownership').value?.trim() || '',
+            acceptanceRequestDate: formatDateForServer(document.getElementById('acceptanceRequestDate').value),
+            acceptanceDate: formatDateForServer(document.getElementById('acceptanceDate').value),
+            dismantlingRequestDate: formatDateForServer(document.getElementById('dismantlingRequestDate').value),
+            dismantlingRequestNumber: document.getElementById('dismantlingRequestNumber').value?.trim() || '',
+            dismantlingDate: formatDateForServer(document.getElementById('dismantlingDate').value)
+        }
     };
 
     try {
         const endpoint = currentCardId ? `${API_BASE_URL}/scaffoldcards/submit-stage` : `${API_BASE_URL}/scaffoldcards`;
-        const method = currentCardId ? 'POST' : 'POST';
         
         const response = await fetch(endpoint, {
-            method: method,
+            method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(formData)
+            body: JSON.stringify(requestData)
         });
 
         if (!response.ok) {
-            const errorData = await response.json();
+            const errorData = await response.json().catch(() => ({}));
             throw new Error(errorData.title || 'Ошибка сервера');
         }
 
         const result = await response.json();
-        currentCardId = result.id;
+        showSuccess('Данные успешно сохранены!');
+        currentCardId = result.id || currentCardId;
         
-        if (!currentCardId) {
-            currentCardId = result.id;
-        }
-        
-        showSuccess('Карточка успешно сохранена!');
-        
-        // Если это новая карточка, обновляем URL
         if (!window.location.search.includes('cardId')) {
-            window.history.pushState(null, '', `?cardId=${currentCardId}&stage=${result.currentStage}`);
+            window.history.pushState(null, '', `?cardId=${currentCardId}&stage=${result.currentStage || currentStage}`);
         }
         
-        // Переходим на следующий этап или в реестр
-        if (result.currentStage === 'Демонтаж') {
+        if (result.currentStage === 'Демонтаж' || currentStage === 'Демонтаж') {
             setTimeout(() => window.location.href = '/registry.html', 1500);
         } else {
-            await loadCard(currentCardId, result.currentStage);
+            const nextStage = result.currentStage || 
+                            (currentStage === 'Заявка на монтаж' ? 'Допуск' : 'Демонтаж');
+            await loadCard(currentCardId, nextStage);
         }
     } catch (error) {
+        console.error('Ошибка при отправке формы:', error);
         showError(`Ошибка сохранения: ${error.message}`);
     }
-
-
 }
 
 // Загрузка справочников
