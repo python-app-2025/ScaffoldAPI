@@ -11,9 +11,12 @@ using ScaffoldAPI.Data;
 namespace ScaffoldAPI.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250330164544_AddStageFields")]
-    partial class AddStageFields
+    [Migration("20250401210529_InitialCreate")]
+    partial class InitialCreate
     {
+       
+       
+       
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
