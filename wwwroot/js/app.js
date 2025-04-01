@@ -29,6 +29,29 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 });
 
+// Загрузка карточки по ID
+async function loadCard(cardId, stage) {
+    try {
+        const response = await fetch(`${API_BASE_URL}/scaffoldcards/${cardId}/${stage || currentStage}`);
+        if (!response.ok) {
+            throw new Error('Карточка не найдена');
+        }
+        
+        const card = await response.json();
+        currentCardId = cardId;
+        currentStage = stage || card.currentStage || currentStage;
+        
+        // Заполняем форму данными
+        populateForm(card);
+        // Рендерим форму для текущего этапа
+        renderFormForStage(card);
+        
+    } catch (error) {
+        console.error('Ошибка загрузки карточки:', error);
+        showError(`Ошибка загрузки карточки: ${error.message}`);
+    }
+}
+
 // Рендер формы для текущего этапа
 function renderFormForStage(card) {
     currentStage = card.CurrentStage || 'Заявка на монтаж';
@@ -146,33 +169,38 @@ function setupFormValidation() {
 // Заполнение формы данными
 function populateForm(card) {
     // Общие поля
-    document.getElementById('lmoSelect').value = card.lmo || '';
-    document.getElementById('location').value = card.location || '';
-    document.getElementById('operatingOrganization').value = card.operatingOrganization || '';
-    document.getElementById('ownership').value = card.ownership || '';
-    document.getElementById('actNumber').value = card.actNumber || '';
-    document.getElementById('requestNumber').value = card.requestNumber || '';
-    document.getElementById('projectSelect').value = card.project || '';
-    document.getElementById('sppElementSelect').value = card.sppElement || '';
-    document.getElementById('requestDate').value = card.requestDate ? formatDateForDisplay(card.requestDate) : '';
-    document.getElementById('mountingDate').value = card.mountingDate ? formatDateForDisplay(card.mountingDate) : '';
-    document.getElementById('scaffoldType').value = card.scaffoldType || '';
-    document.getElementById('length').value = card.length || '';
-    document.getElementById('width').value = card.width || '';
-    document.getElementById('height').value = card.height || '';
-    document.getElementById('workType').value = card.workType || '';
-    document.getElementById('customer').value = card.customer || '';
-    document.getElementById('status').value = card.Status || 'Монтаж';
-
+    if (card.lmo) document.getElementById('lmoSelect').value = card.lmo;
+    if (card.location) document.getElementById('location').value = card.location;
+    if (card.operatingOrganization) document.getElementById('operatingOrganization').value = card.operatingOrganization;
+    if (card.ownership) document.getElementById('ownership').value = card.ownership;
+    if (card.actNumber) document.getElementById('actNumber').value = card.actNumber;
+    if (card.requestNumber) document.getElementById('requestNumber').value = card.requestNumber;
+    if (card.project) document.getElementById('projectSelect').value = card.project;
+    if (card.sppElement) document.getElementById('sppElementSelect').value = card.sppElement;
+    
+    // Даты
+    if (card.requestDate) document.getElementById('requestDate').value = formatDateForDisplay(card.requestDate);
+    if (card.mountingDate) document.getElementById('mountingDate').value = formatDateForDisplay(card.mountingDate);
+    
+    // Характеристики
+    if (card.scaffoldType) document.getElementById('scaffoldType').value = card.scaffoldType;
+    if (card.length) document.getElementById('length').value = card.length;
+    if (card.width) document.getElementById('width').value = card.width;
+    if (card.height) document.getElementById('height').value = card.height;
+    calculateVolume(); // Пересчитываем объем
+    
+    if (card.workType) document.getElementById('workType').value = card.workType;
+    if (card.customer) document.getElementById('customer').value = card.customer;
+    
     // Поля этапа 2
-    document.getElementById('acceptanceRequestDate').value = card.acceptanceRequestDate ? formatDateForDisplay(card.acceptanceRequestDate) : '';
-    document.getElementById('acceptanceDate').value = card.acceptanceDate ? formatDateForDisplay(card.acceptanceDate) : '';
-    document.getElementById('acceptanceStatus').value = card.Status === 'Не принято' ? 'Не принято' : 'Принято (в работе)';
-
+    if (card.acceptanceRequestDate) document.getElementById('acceptanceRequestDate').value = formatDateForDisplay(card.acceptanceRequestDate);
+    if (card.acceptanceDate) document.getElementById('acceptanceDate').value = formatDateForDisplay(card.acceptanceDate);
+    if (card.status) document.getElementById('acceptanceStatus').value = card.status;
+    
     // Поля этапа 3
-    document.getElementById('dismantlingRequestDate').value = card.dismantlingRequestDate ? formatDateForDisplay(card.dismantlingRequestDate) : '';
-    document.getElementById('dismantlingRequestNumber').value = card.dismantlingRequestNumber || '';
-    document.getElementById('dismantlingDate').value = card.dismantlingDate ? formatDateForDisplay(card.dismantlingDate) : '';
+    if (card.dismantlingRequestDate) document.getElementById('dismantlingRequestDate').value = formatDateForDisplay(card.dismantlingRequestDate);
+    if (card.dismantlingRequestNumber) document.getElementById('dismantlingRequestNumber').value = card.dismantlingRequestNumber;
+    if (card.dismantlingDate) document.getElementById('dismantlingDate').value = formatDateForDisplay(card.dismantlingDate);
 }
 
 // Форматирование даты для отображения
@@ -300,8 +328,15 @@ async function submitForm() {
             setTimeout(() => window.location.href = '/registry.html', 1500);
         } else {
             const nextStage = result.currentStage || 
-                            (currentStage === 'Заявка на монтаж' ? 'Допуск' : 'Демонтаж');
-            await loadCard(currentCardId, nextStage);
+                (currentStage === 'Заявка на монтаж' ? 'Допуск' : 'Демонтаж');
+            if (result.id) currentCardId = result.id;
+            currentStage = nextStage;
+            window.history.pushState(null, '', `?cardId=${currentCardId}&stage=${nextStage}`);
+            renderFormForStage({
+                currentStage: nextStage,
+                status: nextStage === 'Допуск' ? 'Принято (в работе)' : 
+                       nextStage === 'Демонтаж' ? 'Демонтировано' : 'Монтаж'
+            });
         }
     } catch (error) {
         console.error('Ошибка при отправке формы:', error);
