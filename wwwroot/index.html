@@ -8,11 +8,14 @@
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/ru.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="icon" href="data:;base64,=">
     <style>
         :root {
             --primary-color: #2c3e50;
             --secondary-color: #3498db;
             --accent-color: #e74c3c;
+            --success-color: #27ae60;
+            --warning-color: #f39c12;
             --light-gray: #f5f5f5;
             --dark-gray: #333;
             --sidebar-width: 250px;
@@ -99,14 +102,59 @@
         h1 {
             font-size: 1.8rem;
             color: var(--primary-color);
-            margin-bottom: 30px;
+            margin-bottom: 20px;
             padding-bottom: 15px;
             border-bottom: 1px solid #eee;
         }
 
+        /* Прогресс-бар этапов */
+        .progress-stages {
+            display: flex;
+            margin-bottom: 25px;
+            border-radius: 8px;
+            overflow: hidden;
+            background-color: var(--light-gray);
+        }
+
+        .stage {
+            flex: 1;
+            padding: 12px;
+            text-align: center;
+            font-weight: 500;
+            position: relative;
+            transition: all 0.3s;
+        }
+
+        .stage:not(:last-child)::after {
+            content: '';
+            position: absolute;
+            right: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 1px;
+            height: 60%;
+            background-color: rgba(0,0,0,0.1);
+        }
+
+        .stage.active {
+            background-color: var(--secondary-color);
+            color: white;
+        }
+
+        .stage.completed {
+            background-color: var(--success-color);
+            color: white;
+        }
+
+
         /* Форма */
         .form-section {
             margin-bottom: 25px;
+            display: none;
+        }
+
+        .form-section.active {
+            display: block;
         }
 
         .form-group {
@@ -146,6 +194,14 @@
             margin-right: 10px;
         }
 
+        .volume-display {
+            background-color: var(--light-gray);
+            padding: 10px;
+            border-radius: 4px;
+            text-align: center;
+            font-weight: bold;
+        }
+
         .btn-add {
             background-color: var(--secondary-color);
             color: white;
@@ -177,6 +233,55 @@
             margin-top: 30px;
             padding-top: 20px;
             border-top: 1px solid #eee;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background-color: var(--secondary-color);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: #2980b9;
+        }
+
+        .btn-secondary {
+            background-color: var(--light-gray);
+            color: var(--dark-gray);
+        }
+
+        .btn-secondary:hover {
+            background-color: #e0e0e0;
+        }
+
+        .btn-success {
+            background-color: var(--success-color);
+            color: white;
+        }
+
+        .btn-success:hover {
+            background-color: #219955;
+        }
+
+        .btn-warning {
+            background-color: var(--warning-color);
+            color: white;
+        }
+
+        .btn-warning:hover {
+            background-color: #e67e22;
         }
 
         .btn-save, .btn-registry, .btn-analytics {
@@ -219,68 +324,42 @@
             background-color: #219955;
         }
 
-        /* Модальное окно */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0,0,0,0.5);
-            z-index: 1000;
-            justify-content: center;
-            align-items: center;
-        }
-
-        .modal-content {
-            background-color: white;
-            padding: 25px;
-            border-radius: 8px;
-            width: 90%;
-            max-width: 500px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-        }
-
-        .modal-content h3 {
-            margin-bottom: 20px;
-            color: var(--primary-color);
-        }
-
-        .modal-actions {
-            display: flex;
-            justify-content: flex-end;
-            gap: 10px;
-            margin-top: 20px;
-        }
-
-        .btn-confirm, .btn-cancel {
-            padding: 8px 16px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: 500;
-        }
-
-        .btn-confirm {
-            background-color: var(--secondary-color);
-            color: white;
-        }
-
-        .btn-cancel {
-            background-color: var(--light-gray);
-            color: var(--dark-gray);
-        }
 
         /* Сообщения */
         #messages-container {
             position: fixed;
             top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
+            right: 20px;
             z-index: 1000;
-            width: 90%;
-            max-width: 500px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-width: 400px;
+        }
+
+        .message {
+            padding: 12px 16px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            animation: fadeIn 0.3s;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .message.error {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+
+        .message.success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         /* Адаптивность */
@@ -312,10 +391,18 @@
             .form-row {
                 grid-template-columns: 1fr;
             }
+            .progress-stages {
+                flex-direction: column;
+            }
+
+            .stage:not(:last-child)::after {
+                display: none;
+            }
         }
     </style>
 </head>
 <body>
+    <div id="messages-container"></div>
     <!-- Сайдбар -->
     <aside class="sidebar">
         <div class="sidebar-header">
@@ -351,158 +438,201 @@
 
     <!-- Основное содержимое (компактная версия) -->
     <main class="main-content">
-        <div class="container">
-            <h1>Новая карточка учета лесов</h1>
+            <div class="container">
+            <h1 id="form-title">Новая карточка учета лесов</h1>
+            <div class="progress-stages">
+                <div class="stage ${currentStage === 'Заявка на монтаж' ? 'active' : ''}">Заявка на монтаж</div>
+                <div class="stage ${currentStage === 'Допуск' ? 'active' : ''}">Допуск</div>
+                <div class="stage ${currentStage === 'Демонтаж' ? 'active' : ''}">Демонтаж</div>
+            </div>
+            
             <form id="scaffoldForm">
-                <!-- Первая строка - 4 элемента -->
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>ЛМО:</label>
-                        <select id="lmoSelect" required>
-                            <option value="">Выберите организацию</option>
-                            <option value="Лесавик">Лесавик</option>
-                            <option value="Инструктура">Инструктура</option>
-                            <option value="СМТ НЛМК">СМТ НЛМК</option>
-                            <option value="Подрядчик">Подрядчик</option>
-                        </select>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label>Расположение:</label>
-                        <input type="text" id="location" placeholder="Рабочая площадка">
+                <!-- Скрытое поле для ID карточки -->
+                <input type="hidden" id="cardId">
+                
+                <!-- Этап 1: Заявка на монтаж -->
+                <div id="stage1-fields" class="form-section active">
+                    <!-- Первая строка - 4 элемента -->
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="lmoSelect">ЛМО:</label>
+                            <select id="lmoSelect" required>
+                                <option value="">Выберите организацию</option>
+                                <option value="Лесавик">Лесавик</option>
+                                <option value="Инструктура">Инструктура</option>
+                                <option value="СМТ НЛМК">СМТ НЛМК</option>
+                                <option value="Подрядчик">Подрядчик</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="location">Расположение:</label>
+                            <input type="text" id="location" placeholder="Рабочая площадка" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="operatingOrganization">Эксплуатирующая организация:</label>
+                            <select id="operatingOrganization" required>
+                                <option value="">Выберите организацию</option>
+                                <option value="ПАО НЛМК">ПАО НЛМК</option>
+                                <option value="СМТ НЛМК">СМТ НЛМК</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="ownership">Принадлежность:</label>
+                            <select id="ownership" required>
+                                <option value="">Выберите принадлежность</option>
+                                <option value="ПАО НЛМК">ПАО НЛМК</option>
+                                <option value="ЛМО">ЛМО</option>
+                            </select>
+                        </div>
                     </div>
 
-                    <div class="form-group">
-                        <label>Эксплуатирующая организация:</label>
-                        <select id="operatingOrganization">
-                            <option value="">Выберите организацию</option>
-                            <option value="ПАО НЛМК">ПАО НЛМК</option>
-                            <option value="СМТ НЛМК">СМТ НЛМК</option>
-                        </select>
+                    <!-- Вторая строка - 4 элемента -->
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="actNumber">№ Акта:</label>
+                            <input type="text" id="actNumber" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="requestNumber">№ Заявки:</label>
+                            <input type="text" id="requestNumber" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="projectSelect">Проект:</label>
+                            <select id="projectSelect" required>
+                                <option value="">Выберите проект</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="sppElementSelect">СПП Элемент:</label>
+                            <select id="sppElementSelect" required>
+                                <option value="">Выберите СПП</option>
+                            </select>
+                        </div>
                     </div>
 
-                    <div class="form-group">
-                        <label>Принадлежность:</label>
-                        <select id="ownership">
-                            <option value="">Выберите принадлежность</option>
-                            <option value="ПАО НЛМК">ПАО НЛМК</option>
-                            <option value="ЛМО">ЛМО</option>
-                        </select>
+                    <!-- Третья строка - 3 элемента (даты) -->
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="requestDate">Дата заявки на монтаж:</label>
+                            <input type="text" class="datepicker" id="requestDate" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="mountingDate">Дата монтажа:</label>
+                            <input type="text" class="datepicker" id="mountingDate" required>
+                        </div>
+                        <div class="form-group" id="dismantlingDateGroup" style="display: none;">
+                            <label for="dismantlingDate">Дата демонтажа:</label>
+                            <input type="text" class="datepicker" id="dismantlingDate">
+                        </div>
+                    </div>
+
+                    <!-- Четвертая строка - 4 элемента (характеристики) -->
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="scaffoldType">Тип лесов:</label>
+                            <select id="scaffoldType" required>
+                                <option value="">Выберите тип</option>
+                                <option value="Стоечные">Стоечные</option>
+                                <option value="Подвесные">Подвесные</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="length">Длина (м):</label>
+                            <input type="number" id="length" min="0.1" step="0.1" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="width">Ширина (м):</label>
+                            <input type="number" id="width" min="0.1" step="0.1" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="height">Высота (м):</label>
+                            <input type="number" id="height" min="0.1" step="0.1" required>
+                        </div>
+                    </div>
+
+                    <!-- Пятая строка - 3 элемента -->
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="workType">Вид работ:</label>
+                            <select id="workType" required>
+                                <option value="">Выберите вид</option>
+                                <option value="Монтаж">Монтаж</option>
+                                <option value="Демонтаж">Демонтаж</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="customer">Заказчик:</label>
+                            <select id="customer" required>
+                                <option value="">Выберите заказчика</option>
+                                <option value="ПАО НЛМК">ПАО НЛМК</option>
+                                <option value="СМТ НЛМК">СМТ НЛМК</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Объем (м³):</label>
+                            <div class="volume-display" id="volume-display">0.00</div>
+                        </div>
                     </div>
                 </div>
-
-                <!-- Вторая строка - 4 элемента -->
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>№ Акта:</label>
-                        <input type="text" id="actNumber">
-                    </div>
-                    <div class="form-group">
-                        <label>№ Заявки:</label>
-                        <input type="text" id="requestNumber">
-                    </div>
-                    <div class="form-group">
-                        <label>Проект:</label>
-                        <select id="projectSelect">
-                            <option value="">Выберите проект</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>СПП Элемент:</label>
-                        <select id="sppElementSelect">
-                            <option value="">Выберите СПП</option>
-                        </select>
+                
+                <!-- Этап 2: Допуск -->
+                <div id="stage2-fields" class="form-section">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="acceptanceRequestDate">Дата заявки на приемку:</label>
+                            <input type="text" class="datepicker" id="acceptanceRequestDate" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="acceptanceDate">Дата приемки:</label>
+                            <input type="text" class="datepicker" id="acceptanceDate" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="acceptanceStatus">Статус:</label>
+                            <select id="acceptanceStatus" required>
+                                <option value="Принято (в работе)">Принято (в работе)</option>
+                                <option value="Не принято">Не принято</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
-
-                <!-- Третья строка - 3 элемента (даты) -->
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Дата заявки:</label>
-                        <input type="text" class="datepicker" id="requestDate">
-                    </div>
-                    <div class="form-group">
-                        <label>Дата монтажа:</label>
-                        <input type="text" class="datepicker" id="mountingDate">
-                    </div>
-                    <div class="form-group">
-                        <label>Дата демонтажа:</label>
-                        <input type="text" class="datepicker" id="dismantlingDate">
-                    </div>
-                </div>
-
-                <!-- Четвертая строка - 4 элемента (характеристики) -->
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Тип лесов:</label>
-                        <select id="scaffoldType">
-                            <option value="">Выберите тип</option>
-                            <option value="Стоечные">Стоечные</option>
-                            <option value="Подвесные">Подвесные</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Длина (м):</label>
-                        <input type="number" id="length" min="0" step="0.1">
-                    </div>
-                    <div class="form-group">
-                        <label>Ширина (м):</label>
-                        <input type="number" id="width" min="0" step="0.1">
-                    </div>
-                    <div class="form-group">
-                        <label>Высота (м):</label>
-                        <input type="number" id="height" min="0" step="0.1">
-                    </div>
-                </div>
-
-                <!-- Пятая строка - 3 элемента -->
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Вид работ:</label>
-                        <select id="workType">
-                            <option value="">Выберите вид</option>
-                            <option value="Монтаж">Монтаж</option>
-                            <option value="Демонтаж">Демонтаж</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Заказчик:</label>
-                        <select id="customer">
-                            <option value="">Выберите заказчика</option>
-                            <option value="ПАО НЛМК">ПАО НЛМК</option>
-                            <option value="СМТ НЛМК">СМТ НЛМК</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Статус:</label>
-                        <select id="status" required>
-                            <option value="">Выберите статус</option>
-                            <option value="Используется">Используется</option>
-                            <option value="Не используется">Не используется</option>
-                        </select>
+                
+                <!-- Этап 3: Демонтаж -->
+                <div id="stage3-fields" class="form-section">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="dismantlingRequestDate">Дата заявки на демонтаж:</label>
+                            <input type="text" class="datepicker" id="dismantlingRequestDate" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="dismantlingRequestNumber">№ Заявки на демонтаж:</label>
+                            <input type="text" id="dismantlingRequestNumber" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="dismantlingDate">Дата демонтажа:</label>
+                            <input type="text" class="datepicker" id="dismantlingDate" required>
+                        </div>
                     </div>
                 </div>
 
                 <div class="form-actions">
-                    <button type="submit" class="btn-save">
-                        <i class="fas fa-save"></i>
-                        <span>Сохранить</span>
+                    <button type="submit" class="btn btn-primary" id="btn-next-stage">
+                        <i class="fas fa-arrow-right"></i>
+                        <span>Следующий этап</span>
                     </button>
-                    <button type="button" class="btn-registry" onclick="window.location.href='/registry.html'">
+                    <button type="button" class="btn btn-secondary" onclick="window.location.href='/registry.html'">
                         <i class="fas fa-list"></i>
                         <span>Реестр</span>
-                    </button>
-                    <button type="button" class="btn-analytics" onclick="window.location.href='/analytics.html'">
-                        <i class="fas fa-chart-bar"></i>
-                        <span>Аналитика</span>
                     </button>
                 </div>
             </form>
         </div>
-
-        <div id="messages-container"></div>
     </main>
 
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/ru.js"></script>
     <script src="/js/app.js"></script>
 </body>
 </html>

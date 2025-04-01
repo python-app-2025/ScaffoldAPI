@@ -316,5 +316,122 @@ canvas {
   color: var(--dark-gray);
 }
 
+/* Статусы */
+.status-badge {
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  display: inline-block;
+}
+
+.status-mounting {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+.status-accepted {
+  background-color: #c3e6cb;
+  color: #0c5460;
+}
+
+.status-rejected {
+  background-color: #fff3cd;
+  color: #856404;
+}
+
+.status-dismantled {
+  background-color: #f8d7da;
+  color: #721c24;
+}
+
+.stage-indicator {
+  font-size: 11px;
+  color: #6c757d;
+  margin-top: 4px;
+}
+
+/* Кнопки */
+.btn-view {
+  color: #3498db;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.btn-view:hover {
+  background-color: #e9f7fe;
+  color: #2874a6;
+}
+
+.btn-delete {
+  background: none;
+  border: none;
+  color: #e74c3c;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.btn-delete:hover {
+  background-color: #fdedec;
+  color: #c0392b;
+}
+
+/* Сообщения */
+.message {
+  padding: 10px 15px;
+  border-radius: 4px;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  animation: fadeIn 0.3s;
+}
+
+.message.error {
+  background-color: #f8d7da;
+  color: #721c24;
+}
+
+.message.success {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Загрузчик */
+#loader {
+  display: none;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1000;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+  .btn-view, .btn-delete {
+      padding: 5px;
+  }
+  
+  .btn-view span, .btn-delete span {
+      display: none;
+  }
+}
+
 .status.используется { background: #c8e6c9; color: #2e7d32; }
 .status.неиспользуется { background: #ffcdd2; color: #c62828; }

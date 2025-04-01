@@ -1,6 +1,8 @@
 // Конфигурация API
 const API_BASE_URL = 'https://scaffoldapi.onrender.com/api'
 let currentDictionaryType = null;
+let currentStage = 'Заявка на монтаж';
+let currentCardId = null;
 
 // Инициализация при загрузке страницы
 document.addEventListener('DOMContentLoaded', async () => {
@@ -9,10 +11,80 @@ document.addEventListener('DOMContentLoaded', async () => {
         await loadDictionaries(); // Загрузка справочников
         initButtons(); // Инициализация кнопок
         setupFormValidation(); // Настройка валидации формы
+        // Проверяем, есть ли в URL параметр cardId (при открытии из реестра)
+        const urlParams = new URLSearchParams(window.location.search);
+        const cardId = urlParams.get('cardId');
+        const stage = urlParams.get('stage');
+        
+        if (cardId) {
+            await loadCard(cardId, stage || 'Заявка на монтаж');
+        } else {
+            renderFormForStage({
+                currentStage: 'Заявка на монтаж',
+                status: 'Монтаж'
+            });
+        }
     } catch (error) {
         showError('Ошибка инициализации: ' + error.message);
     }
 });
+
+// Рендер формы для текущего этапа
+function renderFormForStage(card) {
+    currentStage = card.CurrentStage || 'Заявка на монтаж';
+    
+    // Обновляем прогресс-бар
+    document.querySelectorAll('.stage').forEach(stage => {
+        stage.classList.remove('active', 'completed');
+        
+        if (stage.textContent.includes(currentStage)) {
+            stage.classList.add('active');
+        } else if (
+            (currentStage === 'Допуск' && stage.textContent.includes('Заявка на монтаж')) ||
+            (currentStage === 'Демонтаж' && (stage.textContent.includes('Заявка на монтаж') || stage.textContent.includes('Допуск')))
+        ) {
+            stage.classList.add('completed');
+        }
+    });
+    
+    // Обновляем заголовок
+    document.getElementById('form-title').textContent = `Карточка учета лесов (${currentStage})`;
+    
+    // Скрываем/показываем соответствующие поля
+    document.querySelectorAll('.form-section').forEach(section => {
+        section.style.display = 'none';
+    });
+    
+    if (currentStage === 'Заявка на монтаж') {
+        document.getElementById('stage1-fields').style.display = 'block';
+        const fields = document.querySelectorAll('#stage1-fields [required]');
+        fields.forEach(field => field.required = true);
+    } else if (currentStage === 'Допуск') {
+        document.getElementById('stage2-fields').style.display = 'block';
+    } else if (currentStage === 'Демонтаж') {
+        document.getElementById('stage3-fields').style.display = 'block';
+    }
+    
+    // Настраиваем доступность полей
+    if (currentStage !== 'Заявка на монтаж') {
+        document.querySelectorAll('#stage1-fields input, #stage1-fields select').forEach(el => {
+            el.readOnly = true;
+        });
+    }
+
+    if (currentStage === 'Демонтаж') {
+        document.querySelectorAll('#stage2-fields input, #stage2-fields select').forEach(el => {
+            el.readOnly = true;
+        });
+    }
+
+    // Настраиваем кнопку
+    const btnNext = document.getElementById('btn-next-stage');
+    btnNext.innerHTML = currentStage === 'Демонтаж' ? 
+        '<i class="fas fa-check"></i> Завершить' : 
+        '<i class="fas fa-arrow-right"></i> Следующий этап';
+}
+
 
 // Инициализация календарей
 function initDatePickers() {
@@ -23,13 +95,41 @@ function initDatePickers() {
     });
 }
 
+function validateCurrentStage() {
+    const currentSection = document.querySelector('.form-section[style="display: block;"]');
+    const requiredFields = currentSection.querySelectorAll('[required]');
+    
+    let isValid = true;
+    
+    requiredFields.forEach(field => {
+        // Проверяем только видимые поля
+        if (field.offsetParent !== null && !field.value.trim()) {
+            field.style.borderColor = 'red';
+            isValid = false;
+            
+            if (isValid === false) {
+                field.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                field.focus(); // Добавляем фокус
+            }
+        } else {
+            field.style.borderColor = '';
+        }
+    });
+    
+    if (!isValid) {
+        showError('Заполните все обязательные поля');
+    }
+    
+    return isValid;
+}
+
 // Инициализация кнопок
 function initButtons() {
-    document.querySelectorAll('.btn-add').forEach(button => {
-        button.addEventListener('click', () => {
-            const type = button.dataset.type;
-            openAddModal(type);
-        });
+    document.getElementById('btn-next-stage').addEventListener('click', async (e) => {
+        e.preventDefault(); // Предотвращаем стандартное поведение
+        if (validateCurrentStage()) {
+            await submitForm();
+        }
     });
 }
 
@@ -37,35 +137,58 @@ function initButtons() {
 function setupFormValidation() {
     document.getElementById('scaffoldForm').addEventListener('submit', async (e) => {
         e.preventDefault();
-        
-        if (!validateForm()) {
-            return;
+        if (validateCurrentStage()) {
+            await submitForm();
         }
-
-        await submitForm();
     });
 }
 
-// Валидация формы
-function validateForm() {
-    const form = document.getElementById('scaffoldForm');
-    if (!form.checkValidity()) {
-        showError('Пожалуйста, заполните все обязательные поля корректно');
-        return false;
-    }
+// Заполнение формы данными
+function populateForm(card) {
+    // Общие поля
+    document.getElementById('lmoSelect').value = card.lmo || '';
+    document.getElementById('location').value = card.location || '';
+    document.getElementById('operatingOrganization').value = card.operatingOrganization || '';
+    document.getElementById('ownership').value = card.ownership || '';
+    document.getElementById('actNumber').value = card.actNumber || '';
+    document.getElementById('requestNumber').value = card.requestNumber || '';
+    document.getElementById('projectSelect').value = card.project || '';
+    document.getElementById('sppElementSelect').value = card.sppElement || '';
+    document.getElementById('requestDate').value = card.requestDate ? formatDateForDisplay(card.requestDate) : '';
+    document.getElementById('mountingDate').value = card.mountingDate ? formatDateForDisplay(card.mountingDate) : '';
+    document.getElementById('scaffoldType').value = card.scaffoldType || '';
+    document.getElementById('length').value = card.length || '';
+    document.getElementById('width').value = card.width || '';
+    document.getElementById('height').value = card.height || '';
+    document.getElementById('workType').value = card.workType || '';
+    document.getElementById('customer').value = card.customer || '';
+    document.getElementById('status').value = card.Status || 'Монтаж';
 
-    // Проверка числовых полей
-    const length = parseFloat(document.getElementById('length').value);
-    const width = parseFloat(document.getElementById('width').value);
-    const height = parseFloat(document.getElementById('height').value);
+    // Поля этапа 2
+    document.getElementById('acceptanceRequestDate').value = card.acceptanceRequestDate ? formatDateForDisplay(card.acceptanceRequestDate) : '';
+    document.getElementById('acceptanceDate').value = card.acceptanceDate ? formatDateForDisplay(card.acceptanceDate) : '';
+    document.getElementById('acceptanceStatus').value = card.Status === 'Не принято' ? 'Не принято' : 'Принято (в работе)';
 
-    if (length <= 0 || width <= 0 || height <= 0) {
-        showError('Значения длины, ширины и высоты должны быть положительными числами');
-        return false;
-    }
-
-    return true;
+    // Поля этапа 3
+    document.getElementById('dismantlingRequestDate').value = card.dismantlingRequestDate ? formatDateForDisplay(card.dismantlingRequestDate) : '';
+    document.getElementById('dismantlingRequestNumber').value = card.dismantlingRequestNumber || '';
+    document.getElementById('dismantlingDate').value = card.dismantlingDate ? formatDateForDisplay(card.dismantlingDate) : '';
 }
+
+// Форматирование даты для отображения
+function formatDateForDisplay(dateStr) {
+    if (!dateStr) return '';
+    const date = new Date(dateStr);
+    return `${date.getDate().toString().padStart(2, '0')}.${(date.getMonth() + 1).toString().padStart(2, '0')}.${date.getFullYear()}`;
+}
+
+// Форматирование даты для сервера
+function formatDateForServer(dateStr) {
+    if (!dateStr) return null;
+    const [day, month, year] = dateStr.split('.');
+    return `${year}-${month}-${day}`;
+}
+
 
 // Отправка формы
 async function submitForm() {
@@ -77,6 +200,12 @@ async function submitForm() {
 
     // Собираем данные с правильной структурой (плоский объект)
     const formData = {
+        Id: currentCardId ? parseInt(currentCardId) : 0,
+        CurrentStage: currentStage,
+        Status: currentStage === 'Допуск' ? document.getElementById('acceptanceStatus').value : 
+               currentStage === 'Демонтаж' ? 'Демонтировано' : 'Монтаж',
+        
+        // Общие поля
         lmo: document.getElementById('lmoSelect').value.trim(),
         actNumber: document.getElementById('actNumber').value.trim(), // Оставляем как строку
         requestNumber: document.getElementById('requestNumber').value.trim(), // Оставляем как строку
@@ -85,7 +214,6 @@ async function submitForm() {
         location: document.getElementById('location').value.trim(),
         requestDate: formatDateForServer(document.getElementById('requestDate').value),
         mountingDate: formatDateForServer(document.getElementById('mountingDate').value),
-        dismantlingDate: formatDateForServer(document.getElementById('dismantlingDate').value),
         scaffoldType: document.getElementById('scaffoldType').value.trim(),
         length: Math.max(0.1, parseFloat(document.getElementById('length').value) || 0.1),
         width: Math.max(0.1, parseFloat(document.getElementById('width').value) || 0.1),
@@ -97,47 +225,57 @@ async function submitForm() {
         customer: document.getElementById('customer').value.trim(),
         operatingOrganization: document.getElementById('operatingOrganization').value.trim(),
         ownership: document.getElementById('ownership').value.trim(),
-        status: document.getElementById('status').value.trim()
+
+        // Поля этапа 2
+        acceptanceRequestDate: formatDateForServer(document.getElementById('acceptanceRequestDate').value),
+        acceptanceDate: formatDateForServer(document.getElementById('acceptanceDate').value),
+        
+        // Поля этапа 3
+        dismantlingRequestDate: formatDateForServer(document.getElementById('dismantlingRequestDate').value),
+        dismantlingRequestNumber: document.getElementById('dismantlingRequestNumber').value.trim(),
+        dismantlingDate: formatDateForServer(document.getElementById('dismantlingDate').value)
     };
 
-    // Проверка обязательных полей
-    const requiredFields = [
-        'lmo', 'actNumber', 'requestNumber', 'project', 
-        'sppElement', 'location', 'scaffoldType', 'workType',
-        'customer', 'operatingOrganization', 'ownership', 'status',
-        'requestDate', 'mountingDate', 'dismantlingDate'
-    ];
-
-    const emptyFields = requiredFields.filter(field => {
-        const value = formData[field];
-        return value === '' || value === null || value === undefined;
-    });
-
-    if (emptyFields.length > 0) {
-        showError(`Заполните обязательные поля: ${emptyFields.join(', ')}`);
-        return;
-    }
-
-    // Отправка данных
     try {
-        const response = await fetch(`${API_BASE_URL}/scaffoldcards`, {
-            method: 'POST',
+        const endpoint = currentCardId ? `${API_BASE_URL}/scaffoldcards/submit-stage` : `${API_BASE_URL}/scaffoldcards`;
+        const method = currentCardId ? 'POST' : 'POST';
+        
+        const response = await fetch(endpoint, {
+            method: method,
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(formData) // Отправляем плоский объект
+            body: JSON.stringify(formData)
         });
 
         if (!response.ok) {
             const errorData = await response.json();
-            console.error("Ошибка сервера:", errorData);
             throw new Error(errorData.title || 'Ошибка сервера');
         }
 
+        const result = await response.json();
+        currentCardId = result.id;
+        
+        if (!currentCardId) {
+            currentCardId = result.id;
+        }
+        
         showSuccess('Карточка успешно сохранена!');
-        setTimeout(() => window.location.href = '/registry.html', 1500);
+        
+        // Если это новая карточка, обновляем URL
+        if (!window.location.search.includes('cardId')) {
+            window.history.pushState(null, '', `?cardId=${currentCardId}&stage=${result.currentStage}`);
+        }
+        
+        // Переходим на следующий этап или в реестр
+        if (result.currentStage === 'Демонтаж') {
+            setTimeout(() => window.location.href = '/registry.html', 1500);
+        } else {
+            await loadCard(currentCardId, result.currentStage);
+        }
     } catch (error) {
-        console.error('Ошибка:', error);
         showError(`Ошибка сохранения: ${error.message}`);
     }
+
+
 }
 
 // Загрузка справочников
@@ -190,20 +328,32 @@ async function loadDictionaries() {
     
 // Вспомогательные функции
 function showError(message) {
-    const container = document.getElementById('messages-container');
+    let container = document.getElementById('messages-container');
+    
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'messages-container';
+        document.body.appendChild(container);
+    }
+    
     const errorDiv = document.createElement('div');
     errorDiv.className = 'error-message';
     errorDiv.textContent = message;
     container.appendChild(errorDiv);
     setTimeout(() => errorDiv.remove(), 5000);
     console.error(message);
-    alert(message);
 }
 
 function showSuccess(message) {
     console.log('Успех:', message);
-    const container = document.getElementById('messages-container') || 
-                     createMessagesContainer();
+    let container = document.getElementById('messages-container');
+    
+    // Если контейнера нет — создаем его
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'messages-container';
+        document.body.appendChild(container);
+    }
     
     const successDiv = document.createElement('div');
     successDiv.className = 'success-message';
@@ -211,4 +361,17 @@ function showSuccess(message) {
     container.appendChild(successDiv);
     
     setTimeout(() => successDiv.remove(), 3000);
+}
+
+// Автоматический расчет объема
+document.getElementById('length').addEventListener('input', calculateVolume);
+document.getElementById('width').addEventListener('input', calculateVolume);
+document.getElementById('height').addEventListener('input', calculateVolume);
+
+function calculateVolume() {
+    const length = parseFloat(document.getElementById('length').value) || 0;
+    const width = parseFloat(document.getElementById('width').value) || 0;
+    const height = parseFloat(document.getElementById('height').value) || 0;
+    const volume = (length * width * height).toFixed(2);
+    document.getElementById('volume-display').textContent = volume;
 }

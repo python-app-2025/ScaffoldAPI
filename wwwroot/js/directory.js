@@ -42,12 +42,63 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 async function initDefaultValues() {
-    // Инициализация организаций
-    await initDictionary('Organization', DEFAULT_ORGANIZATIONS);
-    // Инициализация проектов
-    await initDictionary('Project', DEFAULT_PROJECTS);
-    // Инициализация СПП элементов
-    await initDictionary('SppElement', DEFAULT_SPP_ELEMENTS);
+    // Сразу отображаем предзаполненные значения
+    displayDefaultValues('Organization', 'organizations-list', DEFAULT_ORGANIZATIONS);
+    displayDefaultValues('Project', 'projects-list', DEFAULT_PROJECTS);
+    displayDefaultValues('SppElement', 'spp-elements-list', DEFAULT_SPP_ELEMENTS);
+
+    // Затем проверяем сервер и обновляем
+    await checkAndUpdateDictionary('Organization', 'organizations-list', DEFAULT_ORGANIZATIONS);
+    await checkAndUpdateDictionary('Project', 'projects-list', DEFAULT_PROJECTS);
+    await checkAndUpdateDictionary('SppElement', 'spp-elements-list', DEFAULT_SPP_ELEMENTS);
+}
+
+function displayDefaultValues(type, elementId, defaultValues) {
+    const container = document.getElementById(elementId);
+    container.innerHTML = defaultValues.map(value => `
+        <div class="directory-item">
+            <span>${value}</span>
+            <div class="item-actions">
+                <button class="btn-delete" disabled>
+                    <i class="fas fa-trash"></i> Удалить
+                </button>
+            </div>
+        </div>
+    `).join('');
+}
+
+async function checkAndUpdateDictionary(type, elementId, defaultValues) {
+    try {
+        const response = await fetch(`${API_BASE_URL}/dictionary/${type}`);
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        
+        const existingItems = await response.json();
+        
+        // Если справочник пустой, добавляем значения по умолчанию
+        if (existingItems.length === 0) {
+            for (const value of defaultValues) {
+                await fetch(`${API_BASE_URL}/dictionary`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ type, value })
+                });
+            }
+            // После добавления загружаем актуальные данные
+            await loadDirectoryItems(type, elementId);
+        } else {
+            // Если данные уже есть, просто загружаем их
+            await loadDirectoryItems(type, elementId);
+        }
+    } catch (error) {
+        console.error(`Ошибка инициализации справочника ${type}:`, error);
+        // Если ошибка при загрузке, оставляем предзаполненные значения
+        const container = document.getElementById(elementId);
+        container.innerHTML += `
+            <div class="error-message">
+                Ошибка загрузки данных с сервера. Отображаются локальные значения.
+            </div>
+        `;
+    }
 }
 
 async function initDictionary(type, defaultValues) {

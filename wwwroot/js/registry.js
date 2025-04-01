@@ -6,26 +6,17 @@ let sortDirection = 'asc';
 
 // Добавьте в начало registry.js
 function showError(message) {
-    const errorElement = document.getElementById('error-message');
+    const container = document.getElementById('messages-container');
     
-    // Если элемент не найден, создаем его динамически
-    if (!errorElement) {
-        const container = document.querySelector('.container');
-        const newErrorElement = document.createElement('div');
-        newErrorElement.id = 'error-message';
-        newErrorElement.className = 'error-message';
-        newErrorElement.style.display = 'block';
-        newErrorElement.style.color = 'red';
-        newErrorElement.textContent = message;
-        container.prepend(newErrorElement);
-        
-        setTimeout(() => newErrorElement.remove(), 5000);
-        return;
-    }
+    const errorDiv = document.createElement('div');
+    errorDiv.className = 'message error';
+    errorDiv.innerHTML = `
+        <i class="fas fa-exclamation-circle"></i>
+        <span>${message}</span>
+    `;
     
-    errorElement.textContent = message;
-    errorElement.style.display = 'block';
-    setTimeout(() => errorElement.style.display = 'none', 5000);
+    container.appendChild(errorDiv);
+    setTimeout(() => errorDiv.remove(), 5000);
 }
 
 // Инициализация
@@ -115,21 +106,67 @@ function renderTable(data) {
         showError('Ошибка формата данных');
         return;
     }
+    
+    tbody.innerHTML = '';
 
-    tbody.innerHTML = data.map(item => `
-        <tr>
-            <td>${item.id}</td>
-            <td>${item.lmo || ''}</td>
-            <td>${item.actNumber || ''}</td>
-            <td>${item.project || ''}</td>
-            <td>${item.mountingDate ? new Date(item.mountingDate).toLocaleDateString() : ''}</td>
-            <td><span class="status ${item.status ? item.status.toLowerCase() : ''}">${item.status || ''}</span></td>
+    cards.forEach(card => {
+        const row = document.createElement('tr');
+        row.className = `status-${card.status.replace(/\s+/g, '-').toLowerCase()}`;
+        
+        row.innerHTML = `
+            <td>${card.id}</td>
+            <td>${card.lmo || '-'}</td>
+            <td>${card.actNumber || '-'}</td>
+            <td>${card.project || '-'}</td>
+            <td>${formatDate(card.mountingDate)}</td>
             <td>
-                <button class="details-btn" data-card-id="${item.id}">Просмотр</button>
-                <button class="delete-btn" data-card-id="${item.id}">Удалить</button>
+                <span class="status-badge ${getStatusClass(card.status)}">${card.status}</span>
+                <div class="stage-indicator">${card.currentStage}</div>
             </td>
-        </tr>
-    `).join('');
+            <td>
+                <a href="/?cardId=${card.id}&stage=${card.currentStage}" class="btn-view">
+                    <i class="fas fa-eye"></i> Просмотр
+                </a>
+                <button class="btn-delete" data-card-id="${card.id}">
+                    <i class="fas fa-trash"></i> Удалить
+                </button>
+            </td>
+        `;
+        
+        tbody.appendChild(row);
+    });
+}
+
+// Форматирование даты
+function formatDate(dateString) {
+    if (!dateString) return '-';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('ru-RU');
+}
+
+// Получение класса для статуса
+function getStatusClass(status) {
+    const statusMap = {
+        'Монтаж': 'status-mounting',
+        'Принято (в работе)': 'status-accepted',
+        'Не принято': 'status-rejected',
+        'Демонтировано': 'status-dismantled'
+    };
+    return statusMap[status] || '';
+}
+
+// Инициализация слушателей событий
+function initEventListeners() {
+    // Поиск
+    document.getElementById('searchInput').addEventListener('input', debounce(loadData, 300));
+    
+    // Удаление карточки
+    document.addEventListener('click', async (e) => {
+        if (e.target.closest('.btn-delete')) {
+            const cardId = e.target.closest('.btn-delete').dataset.cardId;
+            await deleteCard(cardId);
+        }
+    });
 }
 
 // Сортировка
@@ -137,12 +174,23 @@ function initSortListeners() {
     document.querySelectorAll('#registryTable th[data-sort]').forEach(header => {
         header.addEventListener('click', () => {
             const field = header.dataset.sort;
+            
             if (sortField === field) {
                 sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
             } else {
                 sortField = field;
                 sortDirection = 'asc';
             }
+            
+            // Обновляем иконки сортировки
+            document.querySelectorAll('#registryTable th').forEach(th => {
+                th.querySelector('.sort-icon')?.remove();
+            });
+            
+            const icon = document.createElement('i');
+            icon.className = `fas fa-sort-${sortDirection === 'asc' ? 'up' : 'down'} sort-icon`;
+            header.appendChild(icon);
+            
             loadData();
         });
     });
@@ -165,8 +213,7 @@ function initPaginationControls() {
 
 function updatePaginationControls(totalCount) {
     const totalPages = Math.ceil(totalCount / pageSize);
-    document.getElementById('pageInfo').textContent = 
-        `Страница ${currentPage} из ${totalPages}`;
+    document.getElementById('pageInfo').textContent = `Страница ${currentPage} из ${totalPages}`;
     
     document.getElementById('prevPage').disabled = currentPage === 1;
     document.getElementById('nextPage').disabled = currentPage >= totalPages;
@@ -293,15 +340,16 @@ async function getUniqueProjects() {
 }
 
 function showSuccess(message) {
-    console.log('Успех:', message);
-    const container = document.getElementById('messages-container') || 
-                     createMessagesContainer();
+    const container = document.getElementById('messages-container');
     
     const successDiv = document.createElement('div');
-    successDiv.className = 'success-message';
-    successDiv.textContent = message;
-    container.appendChild(successDiv);
+    successDiv.className = 'message success';
+    successDiv.innerHTML = `
+        <i class="fas fa-check-circle"></i>
+        <span>${message}</span>
+    `;
     
+    container.appendChild(successDiv);
     setTimeout(() => successDiv.remove(), 3000);
 }
 
@@ -370,6 +418,28 @@ async function saveCardChanges() {
         saveBtn.disabled = false;
         saveBtn.textContent = 'Сохранить';
     }
+}
+
+// Вспомогательные функции
+function showLoading(show) {
+    const loader = document.getElementById('loader');
+    const table = document.getElementById('registryTable');
+    
+    if (show) {
+        loader.style.display = 'block';
+        table.style.opacity = '0.5';
+    } else {
+        loader.style.display = 'none';
+        table.style.opacity = '1';
+    }
+}
+
+function debounce(func, timeout = 300) {
+    let timer;
+    return (...args) => {
+        clearTimeout(timer);
+        timer = setTimeout(() => { func.apply(this, args); }, timeout);
+    };
 }
 
 

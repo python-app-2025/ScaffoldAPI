@@ -21,51 +21,67 @@ namespace ScaffoldAPI.Controllers
             [FromQuery] string? project,
             [FromQuery] string? status)
         {
-            var query = _context.ScaffoldCards.AsQueryable();
+            try
+            {
+                var query = _context.ScaffoldCards.AsQueryable();
 
-            if (!string.IsNullOrEmpty(project))
-                query = query.Where(c => c.project == project);
+                if (!string.IsNullOrEmpty(project))
+                    query = query.Where(c => c.project == project);
 
-            if (!string.IsNullOrEmpty(status))
-                query = query.Where(c => c.status == status);
+                if (!string.IsNullOrEmpty(status))
+                    query = query.Where(c => c.status == status);
 
-            var result = await query
-                .GroupBy(c => c.project)
-                .Select(g => new
+                var result = await query
+                    .GroupBy(c => c.project)
+                    .Select(g => new
+                    {
+                        Project = g.Key ?? "Без проекта",
+                        Volume = g.Sum(c => c.volume)
+                    })
+                    .ToListAsync();
+
+                return Ok(new
                 {
-                    Project = g.Key,
-                    Volume = g.Sum(c => c.volume)
-                })
-                .ToListAsync();
-
-            return Ok(new {
-                labels = result.Select(r => r.Project),
-                values = result.Select(r => r.Volume)
-            });
+                    labels = result.Select(r => r.Project),
+                    values = result.Select(r => r.Volume)
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { error = ex.Message });
+            }
         }
 
         [HttpGet("status-distribution")]
         public async Task<IActionResult> GetStatusDistribution(
             [FromQuery] string? project)
         {
-            var query = _context.ScaffoldCards.AsQueryable();
+            try
+            {
+                var query = _context.ScaffoldCards.AsQueryable();
 
-            if (!string.IsNullOrEmpty(project))
-                query = query.Where(c => c.project == project);
+                if (!string.IsNullOrEmpty(project))
+                    query = query.Where(c => c.project == project);
 
-            var result = await query
-                .GroupBy(c => c.status)
-                .Select(g => new
+                var result = await query
+                    .GroupBy(c => c.status ?? "Не указан")
+                    .Select(g => new
+                    {
+                        Status = g.Key,
+                        Count = g.Count()
+                    })
+                    .ToListAsync();
+
+                return Ok(new
                 {
-                    Status = g.Key,
-                    Count = g.Count()
-                })
-                .ToListAsync();
-
-            return Ok(new {
-                labels = result.Select(r => r.Status),
-                values = result.Select(r => r.Count)
-            });
+                    labels = result.Select(r => r.Status),
+                    values = result.Select(r => r.Count)
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { error = ex.Message });
+            }
         }
 
         [HttpGet("timeline")]
@@ -75,33 +91,41 @@ namespace ScaffoldAPI.Controllers
             [FromQuery] DateTime? startDate = null,
             [FromQuery] DateTime? endDate = null)
         {
-            var query = _context.ScaffoldCards.AsQueryable();
+            try
+            {
+                var query = _context.ScaffoldCards.AsQueryable();
 
-            if (!string.IsNullOrEmpty(project))
-                query = query.Where(c => c.project == project);
+                if (!string.IsNullOrEmpty(project))
+                    query = query.Where(c => c.project == project);
 
-            if (startDate.HasValue)
-                query = query.Where(c => c.mountingDate >= startDate);
+                if (startDate.HasValue)
+                    query = query.Where(c => c.mountingDate >= startDate);
 
-            if (endDate.HasValue)
-                query = query.Where(c => c.mountingDate <= endDate);
+                if (endDate.HasValue)
+                    query = query.Where(c => c.mountingDate <= endDate);
 
-            var cards = await query.ToListAsync();
+                var cards = await query.ToListAsync();
 
-            var timelineData = cards
-                .GroupBy(c => GetPeriodKey(c.mountingDate, period))
-                .OrderBy(g => g.Key)
-                .Select(g => new
+                var timelineData = cards
+                    .GroupBy(c => GetPeriodKey(c.mountingDate, period))
+                    .OrderBy(g => g.Key)
+                    .Select(g => new
+                    {
+                        Period = GetPeriodLabel(g.Key, period),
+                        Volume = g.Sum(c => c.volume)
+                    })
+                    .ToList();
+
+                return Ok(new
                 {
-                    Period = GetPeriodLabel(g.Key, period),
-                    Volume = g.Sum(c => c.volume)
-                })
-                .ToList();
-
-            return Ok(new {
-                labels = timelineData.Select(r => r.Period),
-                values = timelineData.Select(r => r.Volume)
-            });
+                    labels = timelineData.Select(r => r.Period),
+                    values = timelineData.Select(r => r.Volume)
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { error = ex.Message });
+            }
         }
 
         private static string GetPeriodKey(DateTime date, string period)
@@ -118,8 +142,8 @@ namespace ScaffoldAPI.Controllers
         private static int GetWeekNumber(DateTime date)
         {
             return CultureInfo.CurrentCulture.Calendar.GetWeekOfYear(
-                date, 
-                CalendarWeekRule.FirstDay, 
+                date,
+                CalendarWeekRule.FirstDay,
                 DayOfWeek.Monday);
         }
 
@@ -127,7 +151,7 @@ namespace ScaffoldAPI.Controllers
         {
             if (period == "day" && DateTime.TryParse(key, out var dayDate))
                 return dayDate.ToString("dd.MM.yyyy");
-            
+
             if (period == "week")
             {
                 var parts = key.Split('-');
