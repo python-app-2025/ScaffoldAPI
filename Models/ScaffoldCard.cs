@@ -7,39 +7,74 @@ namespace ScaffoldAPI.Models
 {
     public class ScaffoldCard
     {
-    public int Id { get; set; }
-    public string lmo { get; set; } = string.Empty;
-    public string actNumber { get; set; } = string.Empty;
-    public string requestNumber { get; set; } = string.Empty;
-    public string project { get; set; } = string.Empty;
-    public string sppElement { get; set; } = string.Empty;
-    public string location { get; set; } = string.Empty;
-    public DateTime requestDate { get; set; }
-    public DateTime mountingDate { get; set; }
-    public DateTime dismantlingDate { get; set; }
-    public DateTime? acceptanceRequestDate { get; set; }
-    public DateTime? acceptanceDate { get; set; }
-    public DateTime? dismantlingRequestDate { get; set; }
-    public string? dismantlingRequestNumber { get; set; }
-    public string scaffoldType { get; set; } = string.Empty;
-    public decimal length { get; set; }
-    public decimal width { get; set; }
-    public decimal height { get; set; }
-    public decimal volume { get; private set; }
-    
-    public void CalculateVolume()
-    {
-        volume = length * width * height;
-    }
-    
-    public string workType { get; set; } = string.Empty;
-    public string customer { get; set; } = string.Empty;
-    public string operatingOrganization { get; set; } = string.Empty;
-    public string ownership { get; set; } = string.Empty;
-    public string status { get; set; } = "Монтаж";
-    public string currentStage { get; set; } = "Заявка на монтаж";
+        public int Id { get; set; }
 
-            // Метод для перехода на следующий этап
+        [Required(ErrorMessage = "Поле ЛМО обязательно для заполнения")]
+        public string lmo { get; set; } = "Лесавик"; // Значение по умолчанию
+
+        [Required(ErrorMessage = "Номер акта обязателен")]
+        public string actNumber { get; set; } = "АКТ-0001"; // Значение по умолчанию
+
+        [Required(ErrorMessage = "Номер заявки обязателен")]
+        public string requestNumber { get; set; } = "ЗАЯВКА-0001"; // Значение по умолчанию
+
+        [Required(ErrorMessage = "Проект обязателен")]
+        public string project { get; set; } = "Проект"; // Значение по умолчанию
+
+        public string sppElement { get; set; } = "СПП-элемент"; // Значение по умолчанию
+
+        [Required(ErrorMessage = "Расположение обязательно")]
+        public string location { get; set; } = "Участок"; // Значение по умолчанию
+
+        [Required(ErrorMessage = "Дата заявки обязательна")]
+        public DateTime requestDate { get; set; } = DateTime.Today; // Текущая дата
+
+        [Required(ErrorMessage = "Дата монтажа обязательна")]
+        public DateTime mountingDate { get; set; } = DateTime.Today; // Текущая дата
+
+        public DateTime? dismantlingDate { get; set; }
+        public DateTime? acceptanceRequestDate { get; set; }
+        public DateTime? acceptanceDate { get; set; }
+        public DateTime? dismantlingRequestDate { get; set; }
+        public string? dismantlingRequestNumber { get; set; }
+
+        [Required(ErrorMessage = "Тип лесов обязателен")]
+        public string scaffoldType { get; set; } = "Стоечные"; // Значение по умолчанию
+
+        [Range(0.1, double.MaxValue, ErrorMessage = "Длина должна быть больше 0")]
+        public decimal length { get; set; } = 1m; // Значение по умолчанию
+
+        [Range(0.1, double.MaxValue, ErrorMessage = "Ширина должна быть больше 0")]
+        public decimal width { get; set; } = 1m; // Значение по умолчанию
+
+        [Range(0.1, double.MaxValue, ErrorMessage = "Высота должна быть больше 0")]
+        public decimal height { get; set; } = 1m; // Значение по умолчанию
+
+        public decimal volume { get; private set; }
+
+        [Required(ErrorMessage = "Вид работ обязателен")]
+        public string workType { get; set; } = "Монтаж"; // Значение по умолчанию
+
+        [Required(ErrorMessage = "Заказчик обязателен")]
+        public string customer { get; set; } = "ПАО НЛМК"; // Значение по умолчанию
+
+        [Required(ErrorMessage = "Эксплуатирующая организация обязательна")]
+        public string operatingOrganization { get; set; } = "ПАО НЛМК"; // Значение по умолчанию
+
+        [Required(ErrorMessage = "Принадлежность обязательна")]
+        public string ownership { get; set; } = "ПАО НЛМК"; // Значение по умолчанию
+
+        public string status { get; set; } = "Монтаж"; // Значение по умолчанию
+        public string currentStage { get; set; } = "Заявка на монтаж"; // Значение по умолчанию
+
+        public void CalculateVolume()
+        {
+            volume = length * width * height;
+        }
+
+        /// <summary>
+        /// Переводит карточку на следующий этап
+        /// </summary>
         public void MoveToNextStage()
         {
             switch(currentStage)
@@ -54,8 +89,30 @@ namespace ScaffoldAPI.Models
                     break;
                 case "Демонтаж":
                     // Карточка завершена, дальше этапов нет
+                    status = "Завершено";
                     break;
+                default:
+                    throw new InvalidOperationException($"Неизвестный этап: {currentStage}");
             }
+        }
+
+        /// <summary>
+        /// Проверяет, можно ли перейти на следующий этап
+        /// </summary>
+        public bool CanMoveToNextStage()
+        {
+            return currentStage switch
+            {
+                "Заявка на монтаж" => !string.IsNullOrEmpty(lmo) && 
+                                     !string.IsNullOrEmpty(actNumber) && 
+                                     !string.IsNullOrEmpty(project) &&
+                                     mountingDate != default,
+                "Допуск" => acceptanceDate.HasValue && 
+                           !string.IsNullOrEmpty(status),
+                "Демонтаж" => dismantlingDate.HasValue && 
+                             !string.IsNullOrEmpty(dismantlingRequestNumber),
+                _ => false
+            };
         }
     }
 }

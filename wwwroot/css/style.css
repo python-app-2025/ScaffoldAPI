@@ -300,6 +300,31 @@ canvas {
   cursor: pointer;
   font-size: 0.9rem;
 }
+.details-btn, .delete-btn {
+  padding: 8px 12px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  transition: all 0.3s;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.details-btn {
+  background-color: #3498db;
+  color: white;
+}
+
+.delete-btn {
+  background-color: #e74c3c;
+  color: white;
+}
+
+.details-btn:hover, .delete-btn:hover {
+  transform: translateY(-1px);
+}
 
 .btn-edit {
   background-color: var(--secondary-color);

@@ -3,6 +3,8 @@ using ScaffoldAPI.Data;
 using ScaffoldAPI.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
+using Microsoft.AspNetCore.Cors;
+using System.Diagnostics;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -10,11 +12,14 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-builder.WebHost.ConfigureKestrel(serverOptions =>
-{
-    serverOptions.ListenAnyIP(8080); // Render проксирует 443 -> 8080
+builder.WebHost.ConfigureKestrel(options => {
+        options.ListenLocalhost(5001, opts => {
+        opts.UseHttps();
+    });
 });
 
+
+// Добавление сервисов в контейнер
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
@@ -25,17 +30,18 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
     {
-        policy.WithOrigins("https://scaffoldapi.onrender.com", 
-                         "http://localhost:3000")
-              .AllowAnyMethod()
-              .AllowAnyHeader()
-              .SetIsOriginAllowed(origin => true)
-              .AllowCredentials();
+        policy.WithOrigins(
+            "https://scaffoldapi.onrender.com",
+            "http://localhost:3000",
+            "https://localhost:5001",
+            "http://localhost:8080"
+        )
+            .AllowAnyMethod()
+            .AllowAnyHeader();
     });
 });
 
 var app = builder.Build();
-
 
 
 // Применение миграций при запуске
@@ -54,13 +60,20 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
-// Конфигурация HTTP pipeline
+// 7. Конфигурация middleware pipeline
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
 
+app.UseForwardedHeaders();
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
+
+app.UseStaticFiles(); // Для wwwroot
 
 app.UseRouting();
 

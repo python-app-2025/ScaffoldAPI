@@ -31,29 +31,49 @@ namespace ScaffoldAPI.Controllers
 
         // Получение всех карточек с пагинацией
         [HttpGet]
-
         public async Task<IActionResult> GetAllCards(
             [FromQuery] int page = 1,
             [FromQuery] int pageSize = 10,
-            [FromQuery] string sortField = "id",
+            [FromQuery] string sortField = "Id",
             [FromQuery] string sortDirection = "asc")
         {
+            // Валидация параметров
+            if (page < 1) page = 1;
+            if (pageSize < 1 || pageSize > 100) pageSize = 10;
+            
             IQueryable<ScaffoldCard> query = _context.ScaffoldCards;
 
             // Сортировка
-            if (sortDirection.ToLower() == "asc")
-                query = query.OrderBy(c => EF.Property<object>(c, sortField));
-            else
-                query = query.OrderByDescending(c => EF.Property<object>(c, sortField));
+            if (!string.IsNullOrEmpty(sortField))
+            {
+                if (sortDirection.ToLower() == "desc")
+                {
+                    query = query.OrderByDescending(c => EF.Property<object>(c, sortField));
+                }
+                else
+                {
+                    query = query.OrderBy(c => EF.Property<object>(c, sortField));
+                }
+            }
 
             // Пагинация
-            var totalCount = await query.CountAsync();
-            var cards = await query
+            var totalItems = await query.CountAsync();
+            var items = await query
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();
 
-            return Ok(new { items = cards, totalCount });
+            // Возвращаем результат с метаданными пагинации
+            var result = new
+            {
+                TotalItems = totalItems,
+                TotalPages = (int)Math.Ceiling(totalItems / (double)pageSize),
+                CurrentPage = page,
+                PageSize = pageSize,
+                Items = items
+            };
+
+            return Ok(result);
         }
 
         // Обновление карточки (полное)
@@ -163,16 +183,61 @@ namespace ScaffoldAPI.Controllers
         [HttpPost("submit-stage")]
         public async Task<IActionResult> SubmitStage([FromBody] ScaffoldCard card)
         {
+            
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+            
+            // Если это новая карточка (Id = 0), создаем ее
+            if (card.Id == 0)
+            {
+                card.CalculateVolume();
+                _context.ScaffoldCards.Add(card);
+                await _context.ScaffoldCards.AddAsync(card);
+                await _context.SaveChangesAsync();
+                return Ok(card);
+            }
+
+            // Если карточка уже существует, обновляем ее
             var existingCard = await _context.ScaffoldCards.FindAsync(card.Id);
             if (existingCard == null) return NotFound();
 
-        
-            // Обновляем данные карточки
-            UpdateCardForStage(existingCard, card);
+            // Обновляем все поля карточки
+            existingCard.lmo = card.lmo;
+            existingCard.actNumber = card.actNumber;
+            existingCard.requestNumber = card.requestNumber;
+            existingCard.project = card.project;
+            existingCard.sppElement = card.sppElement;
+            existingCard.location = card.location;
+            existingCard.requestDate = card.requestDate;
+            existingCard.mountingDate = card.mountingDate;
+            existingCard.scaffoldType = card.scaffoldType;
+            existingCard.length = card.length;
+            existingCard.width = card.width;
+            existingCard.height = card.height;
+            existingCard.workType = card.workType;
+            existingCard.customer = card.customer;
+            existingCard.operatingOrganization = card.operatingOrganization;
+            existingCard.ownership = card.ownership;
+            
+            // Обновляем специфичные для этапа поля
+            switch (card.currentStage)
+            {
+                case "Допуск":
+                    existingCard.acceptanceRequestDate = card.acceptanceRequestDate;
+                    existingCard.acceptanceDate = card.acceptanceDate;
+                    break;
+                case "Демонтаж":
+                    existingCard.dismantlingRequestDate = card.dismantlingRequestDate;
+                    existingCard.dismantlingRequestNumber = card.dismantlingRequestNumber;
+                    existingCard.dismantlingDate = card.dismantlingDate;
+                    break;
+            }
 
             // Переходим на следующий этап
             existingCard.MoveToNextStage();
-
+            
             await _context.SaveChangesAsync();
 
             return Ok(existingCard);

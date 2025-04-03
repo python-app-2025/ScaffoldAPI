@@ -1,7 +1,7 @@
-const API_BASE_URL = 'https://scaffoldapi.onrender.com/api';
+const API_BASE_URL = 'https://scaffoldapi.onrender.com';
 let currentPage = 1;
 const pageSize = 10;
-let sortField = 'id';
+let sortField = 'Id';
 let sortDirection = 'asc';
 
 // Добавьте в начало registry.js
@@ -53,15 +53,19 @@ async function loadRegistry() {
         const tbody = document.querySelector('#registryTable tbody');
         tbody.innerHTML = data.map(item => `
             <tr>
-                <td>${item.id}</td>
+                <td>${item.Id}</td>
                 <td>${item.lmo}</td>
                 <td>${item.actNumber}</td>
                 <td>${item.project}</td>
                 <td>${item.mountingDate}</td>
                 <td>${item.status}</td>
                 <td>
-                    <button onclick="viewDetails(${item.id})">Просмотр</button>
-                    <button onclick="deleteCard(${item.id})">Удалить</button>
+                    <button class="details-btn" onclick="viewDetails(${item.Id})">
+                        Просмотр
+                    </button>
+                    <button class="delete-btn" onclick="deleteCard(${item.Id})">
+                        Удалить
+                    </button>
                 </td>
             </tr>
         `).join('');
@@ -73,10 +77,58 @@ async function loadRegistry() {
 
 
 
+// Рендер таблицы
+function renderTable(responseData) {
+    const tbody = document.querySelector('#registryTable tbody');
+    
+    // Проверка данных
+    if (!responseData || !responseData.items || !Array.isArray(responseData.items)) {
+        console.error('Invalid data format:', responseData);
+        showError('Ошибка формата данных');
+        return;
+    }
+    
+    tbody.innerHTML = '';
+    const cards = responseData.items;
+
+    cards.forEach(card => {
+        const row = document.createElement('tr');
+        row.className = `status-${card.status.replace(/\s+/g, '-').toLowerCase()}`;
+        
+        row.innerHTML = `
+            <td>${card.id || card.Id || '-'}</td>
+            <td>${card.lmo || '-'}</td>
+            <td>${card.actNumber || '-'}</td>
+            <td>${card.project || '-'}</td>
+            <td>${formatDate(card.mountingDate)}</td>
+            <td>
+                <span class="status-badge ${getStatusClass(card.status)}">${card.status}</span>
+                <div class="stage-indicator">${card.currentStage}</div>
+            </td>
+            <td>
+                <a href="/?cardId=${card.id || card.Id}&stage=${card.currentStage}" class="btn-view">
+                    <i class="fas fa-eye"></i> Просмотр
+                </a>
+                <button class="btn-delete" data-card-id="${card.id || card.Id}">
+                    <i class="fas fa-trash"></i> Удалить
+                </button>
+            </td>
+        `;
+        
+        tbody.appendChild(row);
+    });
+
+    // Обновляем пагинацию
+    if (responseData.totalItems !== undefined) {
+        updatePaginationControls(responseData.totalItems);
+    }
+}
+
+
 // Загрузка данных
 async function loadData() {
     try {
-        const response = await fetch(`${API_BASE_URL}/scaffoldcards`, {
+        const response = await fetch(`${API_BASE_URL}/api/scaffoldcards`, {
             credentials: 'include'
         });
         
@@ -90,51 +142,11 @@ async function loadData() {
         console.log('Received data:', data);
         
         renderTable(data);
+
     } catch (error) {
         showError(error.message);
         console.error('Ошибка загрузки:', error);
     }
-}
-
-// Рендер таблицы
-function renderTable(data) {
-    const tbody = document.querySelector('#registryTable tbody');
-    
-    // Проверка данных
-    if (!data || !Array.isArray(data)) {
-        console.error('Invalid data format:', data);
-        showError('Ошибка формата данных');
-        return;
-    }
-    
-    tbody.innerHTML = '';
-
-    cards.forEach(card => {
-        const row = document.createElement('tr');
-        row.className = `status-${card.status.replace(/\s+/g, '-').toLowerCase()}`;
-        
-        row.innerHTML = `
-            <td>${card.id}</td>
-            <td>${card.lmo || '-'}</td>
-            <td>${card.actNumber || '-'}</td>
-            <td>${card.project || '-'}</td>
-            <td>${formatDate(card.mountingDate)}</td>
-            <td>
-                <span class="status-badge ${getStatusClass(card.status)}">${card.status}</span>
-                <div class="stage-indicator">${card.currentStage}</div>
-            </td>
-            <td>
-                <a href="/?cardId=${card.id}&stage=${card.currentStage}" class="btn-view">
-                    <i class="fas fa-eye"></i> Просмотр
-                </a>
-                <button class="btn-delete" data-card-id="${card.id}">
-                    <i class="fas fa-trash"></i> Удалить
-                </button>
-            </td>
-        `;
-        
-        tbody.appendChild(row);
-    });
 }
 
 // Форматирование даты
@@ -220,10 +232,10 @@ function updatePaginationControls(totalCount) {
 }
 
 // Редактирование
-function viewDetails(id) {
-    console.log(`View details for card ${id}`);
+function viewDetails(Id) {
+    console.log(`View details for card ${Id}`);
     // Например, открыть модальное окно или перенаправить
-    showCardDetailsModal(id);
+    showCardDetailsModal(Id);
 }
 
 // Удаление карточки
@@ -233,7 +245,7 @@ async function deleteCard(cardId) {
     }
 
     try {
-        const response = await fetch(`${API_BASE_URL}/scaffoldcards/${cardId}`, {
+        const response = await fetch(`${API_BASE_URL}/api/scaffoldcards/${cardId}`, {
             method: 'DELETE',
             headers: {
                 'Content-Type': 'application/json'
@@ -257,7 +269,7 @@ async function deleteCard(cardId) {
 
 // Заменяем функцию showCardDetailsModal
 function showCardDetailsModal(cardId) {
-    fetch(`${API_BASE_URL}/scaffoldcards/${cardId}`)
+    fetch(`${API_BASE_URL}/api/scaffoldcards/${cardId}`)
         .then(response => {
             if (!response.ok) throw new Error(`Ошибка HTTP: ${response.status}`);
             return response.json();
@@ -330,7 +342,7 @@ function renderModalContent(data, editMode = false) {
 // Функция для получения списка уникальных проектов
 async function getUniqueProjects() {
     try {
-        const response = await fetch(`${API_BASE_URL}/scaffoldcards/projects`);
+        const response = await fetch(`${API_BASE_URL}/api/scaffoldcards/projects`);
         if (!response.ok) throw new Error('Ошибка загрузки проектов');
         return await response.json();
     } catch (error) {
@@ -372,7 +384,7 @@ async function saveCardChanges() {
 
     try {
         // Используем POST запрос как основной метод
-        const response = await fetch(`${API_BASE_URL}/scaffoldcards/update`, {
+        const response = await fetch(`${API_BASE_URL}/api/scaffoldcards/update`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -452,7 +464,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Обработчик кнопки "Редактировать"
     document.getElementById('edit-btn').addEventListener('click', () => {
         const cardId = document.getElementById('details-modal').dataset.cardId;
-        fetch(`${API_BASE_URL}/scaffoldcards/${cardId}`)
+        fetch(`${API_BASE_URL}/api/scaffoldcards/${cardId}`)
             .then(response => response.json())
             .then(data => {
                 renderModalContent(data, true);
