@@ -12,11 +12,22 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-builder.WebHost.ConfigureKestrel(options => {
-        options.ListenLocalhost(5001, opts => {
-        opts.UseHttps();
+// Новая конфигурация Kestrel для Render
+if (builder.Environment.IsDevelopment())
+{
+    builder.WebHost.ConfigureKestrel(options => 
+    {
+        options.ListenLocalhost(5001, opts => opts.UseHttps());
     });
-});
+}
+else
+{
+    builder.WebHost.ConfigureKestrel(options => 
+    {
+        var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
+        options.ListenAnyIP(int.Parse(port));
+    });
+}
 
 
 // Добавление сервисов в контейнер
@@ -34,7 +45,8 @@ builder.Services.AddCors(options =>
             "https://scaffoldapi.onrender.com",
             "http://localhost:3000",
             "https://localhost:5001",
-            "http://localhost:8080"
+            "http://localhost:8080",
+            "https://your-app-name.onrender.com"
         )
             .AllowAnyMethod()
             .AllowAnyHeader();
