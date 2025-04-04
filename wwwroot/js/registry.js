@@ -109,9 +109,6 @@ function renderTable(responseData) {
                 <a href="/?cardId=${card.id || card.Id}&stage=${card.currentStage}" class="btn-view">
                     <i class="fas fa-eye"></i> Просмотр
                 </a>
-                <button class="btn-delete" data-card-id="${card.id || card.Id}">
-                    <i class="fas fa-trash"></i> Удалить
-                </button>
             </td>
         `;
         
